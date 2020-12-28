@@ -28,8 +28,8 @@ set(CMAKE_USE_WIN32_THREADS_INIT 0)
 set(CMAKE_USE_PTHREADS_INIT 1)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-file(MAKE_DIRECTORY /usr/local/share/TVTorrent)
-file(COPY ${CMAKE_SOURCE_DIR}/src/res DESTINATION /usr/local/share/TVTorrent)
+install(DIRECTORY DESTINATION /usr/local/share/TVTorrent)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/res DESTINATION /usr/local/share/TVTorrent)
 
 install(TARGETS tvtorrent DESTINATION bin)
 
