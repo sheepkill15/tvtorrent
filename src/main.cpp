@@ -18,12 +18,14 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
   app->activate(); // Without activate() the window won't be shown.
   return EXIT_SUCCESS;
 }
+
 } // anonymous namespace
 
 int main(int argc, char *argv[])
 {
-	auto app = Gtk::Application::create("com.sheepkill15.tvtorrent", Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
 	
+	auto app = Gtk::Application::create("com.sheepkill15.tvtorrent", Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
+
 	ResourceManager::init();
 
 	TTMainWindow main_window;

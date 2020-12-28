@@ -7,6 +7,8 @@
     <li> libtorrent-rasterbar </li>
     <li> jsoncpp </li>
     <li> boost </li>
+    <li> rapidxml </li>
+    <li> libcurl </li>
 </ul>
 <code>These were the dependencies on Arch linux, please adjust according to your OS.</code>
 <h3>Build & Install instructions</h3>

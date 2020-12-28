@@ -2,18 +2,22 @@ link_directories(
     ${GTKMM_LIBRARY_DIRS}
     ${LIBTORRENT_LIBRARY_DIRS}
     ${JSONCPP_LIBRARY_DIRS}
+    ${CURL_LIBRARY_DIRS}
 )
 
 include_directories(
     ${GTKMM_INCLUDE_DIRS}
     ${LIBTORRENT_INCLUDE_DIRS}
     ${JSONCPP_INCLUDE_DIRS}
+    ${CURL_INCLUDE_DIRS}
+    /usr/include/rapidxml
 )
 
 add_definitions(
     ${GTKMM_CFLAGS_OTHER}
     ${LIBTORRENT_CFLAGS_OTHER}
     ${JSONCPP_CFLAGS_OTHER}
+    ${CURL_CFLAGS_OTHER}
 )
 
 file(GLOB SRC "./*.cpp")
@@ -36,4 +40,5 @@ install(TARGETS tvtorrent DESTINATION bin)
 target_link_libraries(tvtorrent PRIVATE ${GTKMM_LIBRARIES}
     ${LIBTORRENT_LIBRARIES}
     ${JSONCPP_LIBRARIES}
+    ${CURL_LIBRARIES}
 )

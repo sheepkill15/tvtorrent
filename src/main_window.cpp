@@ -20,7 +20,8 @@
 #include "resource_manager.h"
 
 TTMainWindow::TTMainWindow()
-	: tvw_list()
+	: tvw_list(),
+	m_Feed("https://www.erai-raws.info/rss-1080")
 {
 	set_title("TVTorrent");
 	set_border_width(10);
@@ -57,6 +58,7 @@ TTMainWindow::TTMainWindow()
 	m_FlowBox.ON_BUTTON_PRESSED(&TTMainWindow::on_tvwidget_double_click);
 
 	show_all_children();
+
 }
 
 TTMainWindow::~TTMainWindow() {

@@ -10,7 +10,6 @@
 #include <libtorrent/write_resume_data.hpp>
 #include "item_window.h"
 #include "resource_manager.h"
-
 #include <mutex>
 #include <thread>
 #include <chrono>
@@ -54,15 +53,15 @@ TorrentHandler::TorrentHandler()
 TorrentHandler::~TorrentHandler() {
 }
 
-lt::torrent_handle TorrentHandler::AddTorrent(const Glib::ustring &url, const Glib::ustring& file_path)
+lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std::string& file_path)
 {
 
 	std :: cout << file_path << std :: endl;
 
 	lt::add_torrent_params params;
 
-	if(url.rfind("magnet:?", 0) == 0) {
-		params = lt::parse_magnet_uri(lt::string_view(url.c_str()));
+	if(url.rfind("magnet:?", 0) == 0 || url.rfind("https://") == 0) {
+		params = lt::parse_magnet_uri(url);
 	}
 	else {
 		lt::torrent_info info(url);
@@ -89,7 +88,7 @@ lt::torrent_handle TorrentHandler::AddTorrent(const Glib::ustring &url, const Gl
 	return handle;
 }
 
-void TorrentHandler::RemoveTorrent(const Glib::ustring& name) {
+void TorrentHandler::RemoveTorrent(const std::string& name) {
 	std::lock_guard<std::mutex> lock(m_Mutex);
 
 	_ses.remove_torrent(m_Handles[name]);

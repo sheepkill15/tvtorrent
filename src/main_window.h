@@ -1,6 +1,7 @@
 #ifndef TVTORRENT_MAIN_WINDOW_H
 #define TVTORRENT_MAIN_WINDOW_H
 
+#include "feed.h"
 #include "gdkmm/event.h"
 #include "glibmm/refptr.h"
 #include "gtkmm/builder.h"
@@ -43,6 +44,8 @@ protected:
 	std::vector<TVWidget*> tvw_list;
 
 	Glib::RefPtr<Gtk::Builder> m_refBuilder;
+
+	Feed m_Feed;
 };
 
 #endif

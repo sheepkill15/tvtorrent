@@ -4,7 +4,6 @@
 #include "tv_item.h"
 #include <libtorrent/session.hpp>
 #include <libtorrent/torrent_status.hpp>
-#include <glibmm/ustring.h>
 #include <mutex>
 
 class TTItemWindow;
@@ -15,8 +14,8 @@ class TorrentHandler {
 		TorrentHandler();
 		virtual ~TorrentHandler();
 
-		lt::torrent_handle AddTorrent(const Glib::ustring& url, const Glib::ustring& file_path);
-		void RemoveTorrent(const Glib::ustring& name);
+		lt::torrent_handle AddTorrent(const std::string& url, const std::string& file_path);
+		void RemoveTorrent(const std::string& name);
 		std::vector<lt::torrent_status const * > FetchTorrentUpdates();
 		void do_work();
 		void signal_stop();

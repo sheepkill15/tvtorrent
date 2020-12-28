@@ -11,6 +11,7 @@ struct TVTorrent {
 struct TVItem {
 	Glib::ustring name;
 	Glib::ustring img_path;
+	Glib::ustring default_save_path;
 	std::vector<TVTorrent> torrents;
 };
 
