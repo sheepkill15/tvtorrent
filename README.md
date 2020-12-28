@@ -31,8 +31,8 @@
 <p>Now run make in current directory:</p>
 <code>$ make</code>
 <br/>
-<p>And now install the required files</p>
-<code>$ cmake --install .</code>
+<p>And now install the required files (as sudo)</p>
+<code>$ sudo cmake --install .</code>
 <br/>
 <h3>Usage</h3>
 <p>To run from terminal, use:</p>
