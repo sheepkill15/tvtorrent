@@ -23,7 +23,7 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
 
 int main(int argc, char *argv[])
 {
-	
+
 	auto app = Gtk::Application::create("com.sheepkill15.tvtorrent", Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
 
 	ResourceManager::init();

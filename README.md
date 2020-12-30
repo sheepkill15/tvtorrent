@@ -3,12 +3,11 @@
 <h3>Dependencies</h3>
 <ul>
     <li> gtkmm3 </li>
-    <li> libtorrent </li>
     <li> libtorrent-rasterbar </li>
     <li> jsoncpp </li>
     <li> boost </li>
     <li> rapidxml </li>
-    <li> libcurl </li>
+    <li> curl </li>
 </ul>
 <code>These were the dependencies on Arch linux, please adjust according to your OS.</code>
 <h3>Build & Install instructions</h3>

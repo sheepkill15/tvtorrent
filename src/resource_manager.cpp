@@ -7,14 +7,14 @@
 #if defined(_WIN64) || defined(_WIN32) // Windows platform specific
 
 namespace {
-    static std::string SAVE_DIRECTORY;
-    constexpr static const char DELIM = '\\';
-    static std::string RESOURCE_DIRECTORY;
+    std::string SAVE_DIRECTORY;
+    constexpr const char DELIM = '\\';
+    std::string RESOURCE_DIRECTORY;
 }
 
 void ResourceManager::init() {
 	SAVE_DIRECTORY = std::string(getenv("APPDATA")) + "\\TVTorrent";
-	RESOURCE_DIRECTORY = SAVE_DIRECTORY + "\\res";
+	RESOURCE_DIRECTORY = R"(C:\Program Files (x86)\tvtorrent\res)";
 }
 
 #else // Linux platform specific
@@ -48,9 +48,9 @@ void ResourceManager::create_save(const std::vector<TVWidget *> &tvw_list) {
 		info["img_path"] = (std::string)item.img_path;
 		
 		Json::Value torrents;
-		for(int i = 0; i < item.torrents.size(); i++) {
-			torrents[i]["magnet_uri"] = (std::string)item.torrents[i].magnet_uri;
-			torrents[i]["file_path"] = (std::string)item.torrents[i].file_path;
+		for(int j = 0; j < item.torrents.size(); j++) {
+			torrents[j]["magnet_uri"] = (std::string)item.torrents[j].magnet_uri;
+			torrents[j]["file_path"] = (std::string)item.torrents[j].file_path;
 		}
 
 		info["torrents"] = torrents;

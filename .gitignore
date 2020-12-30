@@ -1,4 +1,8 @@
-cmake/
+cmake-build-debug/
 build/
 .cache/
 .saves/
+.idea/
+third_party/
+etc/
+share/

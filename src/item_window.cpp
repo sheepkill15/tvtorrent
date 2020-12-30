@@ -162,17 +162,17 @@ void TTItemWindow::remove_selected_rows(bool remove_files) {
 	if(!selection) return;
 	auto row = selection->get_selected();
 	if(!row) return;
-	int id = row->get_value(m_Columns.m_col_id) - 1;
+	unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
 	auto name = row->get_value(m_Columns.m_col_name);
 
 	std::cout << id << ": " << name << std::endl;
+	m_TorrentHandler.RemoveTorrent(name);
 
 	if(remove_files) {
 		auto path = m_Item->torrents[id].file_path;
 		ResourceManager::delete_file_with_path(path, name);
 		ResourceManager::delete_file(name);
 	}
-	m_TorrentHandler.RemoveTorrent(name);
 
 	m_Item->torrents.erase(m_Item->torrents.begin() + id);
 	m_refTreeModel->erase(row);
