@@ -171,7 +171,7 @@ void TTMainWindow::on_button_add() {
 void TTMainWindow::on_button_remove() {
 	
 	auto selected = m_FlowBox.get_selected_children();
-	if(selected.size() == 0) return;
+	if(selected.empty()) return;
 	int index = selected[0]->get_index();
 	if(index < 0) return;
 	auto tvw = tvw_list[index];
@@ -202,6 +202,3 @@ void TTMainWindow::on_item_window_hide(TTItemWindow* window) {
 	delete window;
 }
 
-void TTMainWindow::on_button_quit() {
-	hide();
-}

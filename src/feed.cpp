@@ -1,10 +1,11 @@
 #include "feed.h"
 #include <iostream>
+#include <utility>
 
 namespace {
-    int writer(char *data, size_t size, size_t nmemb, std::string *buffer){
-    	int result = 0;
-    	if(buffer != NULL) {
+    unsigned long long writer(char *data, size_t size, size_t nmemb, std::string *buffer){
+    	unsigned long long result = 0;
+    	if(buffer != nullptr) {
     		buffer -> append(data, size * nmemb);
     		result = size * nmemb;
     	}
@@ -12,8 +13,8 @@ namespace {
     } 
 }
 
-Feed::Feed(const std::string& rss_url)
-    :RSS_URL(rss_url)
+Feed::Feed(std::string  rss_url)
+    :RSS_URL(std::move(rss_url))
 {
     parse_feed(true);
     own = std::thread([this] {periodic();});
@@ -73,7 +74,7 @@ void Feed::parse_feed(bool first) {
         channel_data.link = link->value();
     }
     m_Items.clear();
-    for(auto child = channel->first_node("item"); child != NULL; child = child->next_sibling("item")) {
+    for(auto child = channel->first_node("item"); child != nullptr; child = child->next_sibling("item")) {
         parse_item(child);
     }
 

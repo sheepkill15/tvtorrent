@@ -35,7 +35,7 @@ class TTItemWindow : public Gtk::Window {
 public:
 
 	TTItemWindow(TVWidget& item);
-	virtual ~TTItemWindow();
+	~TTItemWindow() override;
 
 	void on_button_add();
 	void on_button_remove();
@@ -47,7 +47,7 @@ public:
 	void on_pause_torrent();
 
 	void add_torrent(const Glib::ustring& magnet_url, const Glib::ustring& file_path);
-	void update_torrents(TTItemWindow* caller);
+	//void update_torrents(TTItemWindow* caller);
 	void update_torrent_views();
 	void add_torrent_row(const lt::torrent_handle& handle);
 	void remove_selected_rows(bool remove_files);

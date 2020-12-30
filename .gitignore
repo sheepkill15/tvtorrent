@@ -3,6 +3,6 @@ build/
 .cache/
 .saves/
 .idea/
-third_party/
 etc/
 share/
+third_party/

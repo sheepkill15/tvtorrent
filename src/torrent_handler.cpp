@@ -24,9 +24,9 @@ using clk = std::chrono::steady_clock;
 } // anonymous namespace
 
 // return the name of a torrent status enum
-std::string TorrentHandler::state(lt::torrent_status status)
+std::string TorrentHandler::state(const lt::torrent_status& status)
 {
-  bool IsPaused = (status.flags & ( lt::torrent_flags::paused)) == lt::torrent_flags::paused ? true : false;
+  bool IsPaused = (status.flags & (lt::torrent_flags::paused)) == lt::torrent_flags::paused;
   if(IsPaused) return "Paused";
   switch(status.state) {
     case lt::torrent_status::checking_files: return "Checking";
@@ -50,8 +50,7 @@ TorrentHandler::TorrentHandler()
 	_ses.apply_settings(p);
 }
 
-TorrentHandler::~TorrentHandler() {
-}
+TorrentHandler::~TorrentHandler() = default;
 
 lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std::string& file_path)
 {
@@ -73,7 +72,7 @@ lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std:
 		std::ifstream ifs(entry.path(), std::ios_base::binary);
 		ifs.unsetf(std::ios_base::skipws);
 		std::vector<char> buf{std::istream_iterator<char>(ifs), std::istream_iterator<char>()};
-		if(buf.size()) {
+		if(!buf.empty()) {
 			auto atp = lt::read_resume_data(buf);
 			if(atp.info_hash == params.info_hash) {params = std::move(atp);
 				break;
@@ -90,14 +89,17 @@ lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std:
 
 void TorrentHandler::RemoveTorrent(const std::string& name) {
 	std::lock_guard<std::mutex> lock(m_Mutex);
-
-	_ses.remove_torrent(m_Handles[name]);
+    m_Handles[name].pause();
+    auto handle = m_Handles[name];
+    handle.flush_cache();
+	_ses.remove_torrent(handle);
 	m_Handles.erase(m_Handles.find(name));
+	while(handle.is_valid()) ;
 }
 
 int TorrentHandler::subscribe(const std::function<void()>& callback) {
 	//std::lock_guard<std::mutex> lock(m_Mutex);
-	int id = rand();
+	int id = sub_count++;
 	m_Callbacks.insert(std::make_pair(id, callback));
 	return id;
 }

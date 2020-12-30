@@ -23,7 +23,7 @@ public:
         std::string ver_pattern;
     };
 
-    Feed(const std::string&);
+    explicit Feed(std::string );
     ~Feed();
     void parse_feed(bool = false);
     void add_filter(const std::string&, const std::string&, const std::string&);
@@ -43,12 +43,12 @@ private:
 
     rapidxml::xml_document<> doc;
 
-    void* curl;
+    void* curl{};
 
     mutable std::mutex m_Mutex;
     std::thread own;
 
-    bool should_work;
+    bool should_work{};
 
     std::vector<Item> m_Items;
     std::vector<Filter> m_Filters;

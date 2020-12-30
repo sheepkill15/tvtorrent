@@ -122,7 +122,7 @@ void TTItemWindow::notify() {
 
 void TTItemWindow::update_torrent_views() {
 
-	for(auto row: m_refTreeModel->children()) {
+	for(const auto& row: m_refTreeModel->children()) {
 		auto status = m_TorrentHandler.m_Handles[row->get_value(m_Columns.m_col_name)].status();
 		row[m_Columns.m_col_progress] = status.progress_ppm / 10000;
 		row[m_Columns.m_col_state] = TorrentHandler::state(status);
@@ -180,6 +180,7 @@ void TTItemWindow::remove_selected_rows(bool remove_files) {
 	for(int i = 1; i <= children.size(); i++) {
 		children[i][m_Columns.m_col_id] = i;
 	}
+	std::cout << "Deleted!" << std::endl;
 }
 
 TTItemWindow::~TTItemWindow() {
@@ -206,12 +207,12 @@ bool TTItemWindow::on_row_pressed(GdkEventButton *ev) {
 		auto row = selection->get_selected();
 		auto state = m_TorrentHandler.m_Handles[row->get_value(m_Columns.m_col_name)].status().state;
 		//if(state != lt::torrent_status::finished && state != lt::torrent_status::seeding) return false;
-		int id = row->get_value(m_Columns.m_col_id) - 1;
+		unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
 		auto path = m_Item->torrents[id].file_path;
 		//system(Glib::ustring::format("xdg-open ", "\"", path, "/", row->get_value(m_Columns.m_col_name), "\"").c_str());
-		GError *error = NULL;
+		GError *error = nullptr;
 		if(!g_app_info_launch_default_for_uri(Glib::ustring::format("file:///", path).c_str()
-		, NULL, &error)) {
+		, nullptr, &error)) {
 			g_warning("Failed to open uri: %s", error->message);
 			return false;
 		}

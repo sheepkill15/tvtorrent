@@ -19,14 +19,12 @@ class TTMainWindow : public Gtk::Window {
 
 public:
 	TTMainWindow();
-	virtual ~TTMainWindow();
+	~TTMainWindow() override;
 
 	void external_torrent(char argv[]);
 
 protected:
-	//Signal handlers:
-	void on_button_quit();
-	void on_button_download();
+    void on_button_download();
 	void on_button_add();
 	void on_button_remove();
 	void on_button_settings();

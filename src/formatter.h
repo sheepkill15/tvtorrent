@@ -4,10 +4,6 @@
 #include "glibmm/ustring.h"
 #include <iomanip>
 
-namespace {
-
-}
-
 class Formatter {
     public:
     
@@ -49,8 +45,8 @@ class Formatter {
 
     constexpr const static float KILOBYTE = 1024;
 	constexpr const static float MEGABYTE = 1024*1024;
-	constexpr const static float GIGABYTE = 1024*1024*1024;
-	constexpr const static float TERRABYTE = 1024ULL*1024*1024*1024;
+	constexpr const static float GIGABYTE = 1024.F*1024*1024;
+	constexpr const static float TERRABYTE = 1024.F*1024*1024*1024;
 
     constexpr const static int MINUTE = 60;
     constexpr const static int HOUR = 60*60;

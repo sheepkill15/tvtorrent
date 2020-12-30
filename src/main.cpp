@@ -10,7 +10,7 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
                     Glib::RefPtr<Gtk::Application>& app)
 {
   int argc = 0;
-  char** argv = command_line->get_arguments(argc);
+  //char** argv = command_line->get_arguments(argc);
 
 //   for (int i = 0; i < argc; ++i)
 //     std::cout << "argv[" << i << "] = " << argv[i] << std::endl;
