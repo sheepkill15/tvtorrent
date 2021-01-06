@@ -14,5 +14,4 @@ struct TVItem {
 	Glib::ustring default_save_path;
 	std::vector<TVTorrent> torrents;
 };
-
 #endif

@@ -1,25 +1,30 @@
 #include "torrent_handler.h"
 #include <fstream>
-#include <libtorrent/add_torrent_params.hpp>
 #include <libtorrent/magnet_uri.hpp>
 #include <libtorrent/torrent_info.hpp>
 #include <libtorrent/alert_types.hpp>
-#include <libtorrent/session_settings.hpp>
-#include <libtorrent/torrent_handle.hpp>
 #include <libtorrent/read_resume_data.hpp>
 #include <libtorrent/write_resume_data.hpp>
 #include "item_window.h"
 #include "resource_manager.h"
+#include "main_window.h"
 #include <mutex>
 #include <thread>
 #include <chrono>
 #include <iostream>
 #include <filesystem>
-#include <utility>
 
 namespace {
 
 using clk = std::chrono::steady_clock;
+    unsigned long long writer(char *data, size_t size, size_t nmemb, std::string *buffer){
+        unsigned long long result = 0;
+        if(buffer != nullptr) {
+            buffer -> append(data, size * nmemb);
+            result = size * nmemb;
+        }
+        return result;
+    }
 
 } // anonymous namespace
 
@@ -50,17 +55,42 @@ TorrentHandler::TorrentHandler()
 	_ses.apply_settings(p);
 }
 
-TorrentHandler::~TorrentHandler() = default;
+TorrentHandler::~TorrentHandler() {
+    for(auto& pair : m_Handles) {
+        _ses.remove_torrent(pair.second);
+    }
+    m_Handles.clear();
+}
 
 lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std::string& file_path)
 {
 
 	std :: cout << file_path << std :: endl;
+	std::cout << url << std::endl;
 
 	lt::add_torrent_params params;
 
-	if(url.rfind("magnet:?", 0) == 0 || url.rfind("https://") == 0) {
+	if(url.rfind("magnet:?", 0) == 0) {
 		params = lt::parse_magnet_uri(url);
+	}
+	else if(url.rfind("https://") == 0) {
+	    std::string buffer;
+        auto curl = curl_easy_init();
+        if(curl) {
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl, CURLOPT_HEADER, 0);
+            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0); /* Don't follow anything else than the particular url requested*/
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);	/* Function Pointer "writer" manages the required buffer size */
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer ); /* Data Pointer &buffer stores downloaded web content */
+        } else {
+            std::cerr << "Curl couldn't be configured! " << std::endl;
+            return lt::torrent_handle();
+        }
+        curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+
+        lt::torrent_info info(buffer.c_str(), buffer.size());
+        params = lt::parse_magnet_uri(lt::make_magnet_uri(info));
 	}
 	else {
 		lt::torrent_info info(url);
@@ -79,6 +109,15 @@ lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std:
 			}
 		}
 	}
+	bool add = true;
+	for(auto& download : TTMainWindow::m_Downloaded) {
+	    if(params.name == download) {
+	        add = false;
+	        break;
+	    }
+	}
+	if(add)
+        TTMainWindow::m_Downloaded.push_back(params.name);
 	params.download_limit = 7000000;
 	params.upload_limit = 7000000;
 	params.save_path = file_path;
@@ -87,14 +126,15 @@ lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std:
 	return handle;
 }
 
-void TorrentHandler::RemoveTorrent(const std::string& name) {
+void TorrentHandler::RemoveTorrent(const std::string& name, bool remove_files) {
 	std::lock_guard<std::mutex> lock(m_Mutex);
     m_Handles[name].pause();
-    auto handle = m_Handles[name];
+    auto handle = m_Handles[name];;
+    m_Handles.erase(m_Handles.find(name));
     handle.flush_cache();
-	_ses.remove_torrent(handle);
-	m_Handles.erase(m_Handles.find(name));
-	while(handle.is_valid()) ;
+    if(remove_files)
+	    _ses.remove_torrent(handle, lt::session_handle::delete_files);
+    else _ses.remove_torrent(handle);
 }
 
 int TorrentHandler::subscribe(const std::function<void()>& callback) {

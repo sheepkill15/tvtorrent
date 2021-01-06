@@ -8,6 +8,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <glibmm/ustring.h>
 
 class Feed {
 public:
@@ -18,15 +19,26 @@ public:
     };
 
     struct Filter {
-        std::string tvwidget;
-        std::string name;
-        std::string ver_pattern;
+        Glib::ustring id;
+        Glib::ustring name;
+        Glib::ustring ver_pattern;
+        Glib::ustring tvw;
+        std::vector<Glib::ustring> feeds = {};
+
+        int internal_id;
+
+        bool operator== (const Filter& other) const {
+            return internal_id == other.internal_id;
+        }
     };
 
     explicit Feed(std::string );
     ~Feed();
     void parse_feed(bool = false);
-    void add_filter(const std::string&, const std::string&, const std::string&);
+    //void add_filter(const std::string&, const std::string&, const std::string&);
+
+    inline const std::string& GetUrl() const { return RSS_URL; }
+    inline const std::vector<Item>& GetItems() const { return m_Items; }
 
     struct {
         std::string title;
@@ -38,7 +50,7 @@ private:
     void periodic();
     void parse_item(rapidxml::xml_node<char>*);
 
-    std::string RSS_URL;
+    const std::string RSS_URL;
     std::string buffer;
 
     rapidxml::xml_document<> doc;
@@ -51,7 +63,6 @@ private:
     bool should_work{};
 
     std::vector<Item> m_Items;
-    std::vector<Filter> m_Filters;
 };
 
 #endif

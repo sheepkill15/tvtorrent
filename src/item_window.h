@@ -34,7 +34,7 @@ class TTItemWindow : public Gtk::Window {
 
 public:
 
-	TTItemWindow(TVWidget& item);
+	explicit TTItemWindow(TVWidget& item);
 	~TTItemWindow() override;
 
 	void on_button_add();

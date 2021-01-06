@@ -23,14 +23,15 @@ Feed::Feed(std::string  rss_url)
 Feed::~Feed() {
     //curl_easy_cleanup(curl);
     should_work = false;
-    if(own.joinable()) {
-        own.join();
-    }
+    own.detach();
+//    if(own.joinable()) {
+//        own.join();
+//    }
 }
 
-void Feed::add_filter(const std::string& tvwidget, const std::string & name, const std::string & pattern) {
-    m_Filters.push_back({tvwidget, name, pattern});
-}
+//void Feed::add_filter(const std::string& tvwidget, const std::string & name, const std::string & pattern) {
+//    m_Filters.push_back({tvwidget, name, pattern});
+//}
 
 void Feed::periodic() {
     should_work = true;
@@ -39,7 +40,7 @@ void Feed::periodic() {
             std::lock_guard<std::mutex> lock(m_Mutex);
             parse_feed();
         }
-	    std::this_thread::sleep_for(std::chrono::seconds(5));
+	    std::this_thread::sleep_for(std::chrono::minutes(5));
     }
 }
 
@@ -78,9 +79,9 @@ void Feed::parse_feed(bool first) {
         parse_item(child);
     }
 
-    for(auto& item : m_Items) {
-        std::cout << item.title << std::endl << item.link << std::endl << item.date << std::endl; 
-    }
+//    for(auto& item : m_Items) {
+//        std::cout << item.title << std::endl << item.link << std::endl << item.date << std::endl;
+//    }
 
 	//std::cout << "Name of first node is: " << doc.first_node()->name() << std::endl;
 }
@@ -89,9 +90,5 @@ void Feed::parse_item (rapidxml::xml_node<>* child) {
     auto title = child->first_node("title");
     std::string title_value = title->value();
 
-    for(auto& filter : m_Filters) {
-        if(title_value.find(filter.name) != std::string::npos) {
-            m_Items.push_back({title_value, child->first_node("link")->value(), child->first_node("pubDate")->value()});
-        }
-    }
+    m_Items.push_back({title_value, child->first_node("link")->value(), child->first_node("pubDate")->value()});
 }

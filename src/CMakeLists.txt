@@ -1,5 +1,6 @@
 
 file(GLOB SRC "./*.cpp")
+
 if(NOT WIN32)
 add_executable(tvtorrent ${SRC})
 endif()
@@ -71,9 +72,13 @@ if(WIN32)
     install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX})
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/res DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-    install(TARGETS tvtorrent DESTINATION ${CMAKE_INSTALL_PREFIX})
+    install(TARGETS tvtorrent DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 endif()
+
+
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_SOURCE_DIR}/src/res DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(tvtorrent PRIVATE ${GTKMM_LIBRARIES}
     ${LIBTORRENT_LIBRARIES}

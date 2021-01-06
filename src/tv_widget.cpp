@@ -1,18 +1,14 @@
 #include "tv_widget.h"
-#include "gdkmm/pixbuf.h"
-#include "gtkmm/box.h"
-#include "gtkmm/builder.h"
-#include "gtkmm/enums.h"
 #include "gtkmm/textbuffer.h"
 #include <iostream>
 #include "macros.h"
 #include "formatter.h"
 #include "resource_manager.h"
 
-TVWidget::TVWidget(const Glib::ustring& itemName, const Glib::ustring& imgPath)
+TVWidget::TVWidget(const Glib::ustring& itemName, const Glib::ustring& imgPath, const Glib::ustring& default_path)
 	:m_Dispatcher()
 {
-	init(itemName, imgPath);
+	init(itemName, imgPath, default_path);
 }
 
 void TVWidget::SetupTorrents() {
@@ -22,8 +18,8 @@ void TVWidget::SetupTorrents() {
 	update();
 }
 
-void TVWidget::init(const Glib::ustring &itemName, const Glib::ustring &imgPath) {
-	m_Item = {itemName, imgPath};
+void TVWidget::init(const Glib::ustring &itemName, const Glib::ustring &imgPath, const Glib::ustring& default_path) {
+	m_Item = {itemName, imgPath, default_path};
 
 	builder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_tvwidget.glade"));
 	builder->get_widget("TVWidget", m_Box);
@@ -44,7 +40,7 @@ void TVWidget::init(const Glib::ustring &itemName, const Glib::ustring &imgPath)
 	m_Dispatcher.ON_DISPATCH(&TVWidget::update);
 	first = new std::thread([this] { m_Handler.do_work(); });
 
-	subscription = m_Handler.subscribe([this] {TVWidget::notify();});
+	subscription = m_Handler.subscribe((const std::function<void()> &) [this] { TVWidget::notify(); });
 }
 
 void TVWidget::update() {
@@ -53,12 +49,12 @@ void TVWidget::update() {
 	lt::torrent_status maxi;
 	for(auto& pair : m_Handler.m_Handles) {
 		auto& handle = pair.second;
+		if(!handle.is_valid()) continue;
 		auto status = handle.status();
 		if(status.state == lt::torrent_status::downloading && status.progress_ppm > maxi.progress_ppm) {
 			maxi = status;
 		}
 	}
-
 	if(maxi.state == lt::torrent_status::downloading) {
 		FileName->set_label(maxi.name);
 		Progress->set_fraction(maxi.progress);
@@ -84,8 +80,6 @@ TVWidget::~TVWidget() {
 
 	delete m_Box;
 	m_Handler.signal_stop();
-	if(first->joinable()) {
-		first->join();
-	}
+	first->detach();
 	delete first;
 }

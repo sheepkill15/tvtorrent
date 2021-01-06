@@ -14,6 +14,9 @@
 #include "tv_widget.h"
 #include <gtkmm/window.h>
 #include <gtkmm/scrolledwindow.h>
+#include <regex>
+
+class TTFeedControlWindow;
 
 class TTMainWindow : public Gtk::Window {
 
@@ -22,28 +25,47 @@ public:
 	~TTMainWindow() override;
 
 	void external_torrent(char argv[]);
+    void add_feed(const Glib::ustring& url);
+    Feed::Filter& add_filter();
 
+
+    inline std::vector<Feed::Filter>& GetFilters() { return m_Filters; }
+    inline void RemoveFilter(int index) { m_Filters.erase(m_Filters.begin() + index); }
+
+    std::vector<TVWidget*> tvw_list;
+    std::vector<Feed*> feed_list;
+    inline static std::vector<std::string> m_Downloaded;
 protected:
-    void on_button_download();
+    //void on_button_download();
 	void on_button_add();
 	void on_button_remove();
 	void on_button_settings();
+	void on_button_feeds();
 	bool on_tvwidget_double_click(GdkEventButton* ev);
 	void on_item_window_hide(TTItemWindow* window);
+	void on_feedcontrol_window_hide();
 
-	void add_item(const Glib::ustring& name, const Glib::ustring& img_path);
+	void add_item(const Glib::ustring& name, const Glib::ustring& img_path, const Glib::ustring& default_path);
 	void init_items();
 
+	void check_feeds();
+	static bool check_if_already_downloaded(const std::string&, const std::smatch&);
+
+	std::thread check;
+    mutable std::mutex m_Mutex;
+    bool should_work{};
 
 	Gtk::FlowBox m_FlowBox;
 	Gtk::ScrolledWindow m_ScrolledWindow;
 	Gtk::VBox m_VBox;
 
-	std::vector<TVWidget*> tvw_list;
+    Glib::RefPtr<Gtk::Builder> m_refBuilder;
 
-	Glib::RefPtr<Gtk::Builder> m_refBuilder;
+    TTFeedControlWindow* feed_control_window = nullptr;
+    std::vector<Feed::Filter> m_Filters;
 
-	Feed m_Feed;
+
+    int filter_count = 0;
 };
 
 #endif

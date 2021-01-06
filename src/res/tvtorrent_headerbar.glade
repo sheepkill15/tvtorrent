@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2 -->
+<!-- Generated with glade 3.38.1 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
   <object class="GtkImage" id="image1">
@@ -17,6 +17,12 @@
     <property name="can-focus">False</property>
     <property name="pixel-size">0</property>
     <property name="icon-name">emblem-system</property>
+  </object>
+  <object class="GtkImage" id="image4">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="pixel-size">0</property>
+    <property name="icon-name">emblem-mail</property>
   </object>
   <object class="GtkHeaderBar" id="HeaderBar">
     <property name="visible">True</property>
@@ -63,6 +69,20 @@
       <packing>
         <property name="pack-type">end</property>
         <property name="position">3</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="FeedsButton">
+        <property name="visible">True</property>
+        <property name="can-focus">True</property>
+        <property name="receives-default">True</property>
+        <property name="halign">center</property>
+        <property name="valign">center</property>
+        <property name="image">image4</property>
+      </object>
+      <packing>
+        <property name="pack-type">end</property>
+        <property name="position">4</property>
       </packing>
     </child>
   </object>

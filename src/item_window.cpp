@@ -54,6 +54,11 @@ TTItemWindow::TTItemWindow(TVWidget& item)
 
 	builder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_addtorrent.glade"));
 	builder->get_widget<Gtk::MessageDialog>("AddTorrentDialog", m_Dialog);
+
+	Gtk::FileChooserButton* path;
+	builder->get_widget("FilePath", path);
+	path->set_filename(m_Item->default_save_path);
+
 	m_Dialog->ON_RESPONSE(&TTItemWindow::on_torrentadddialog_response);
 
 	remove_builder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_removetorrent.glade"));
@@ -113,7 +118,7 @@ TTItemWindow::TTItemWindow(TVWidget& item)
 
 	m_Dispatcher.ON_DISPATCH(&TTItemWindow::update_torrent_views);
 	//first = new std::thread([this] { m_TorrentHandler.do_work(this); });
-	subscription = m_TorrentHandler.subscribe([this] {TTItemWindow::notify();});
+	subscription = m_TorrentHandler.subscribe((const std::function<void()> &) [this] { TTItemWindow::notify(); });
 }
 
 void TTItemWindow::notify() {
@@ -123,7 +128,9 @@ void TTItemWindow::notify() {
 void TTItemWindow::update_torrent_views() {
 
 	for(const auto& row: m_refTreeModel->children()) {
-		auto status = m_TorrentHandler.m_Handles[row->get_value(m_Columns.m_col_name)].status();
+	    auto& handle = m_TorrentHandler.m_Handles[row->get_value(m_Columns.m_col_name)];
+	    if(!handle.is_valid()) continue;
+		auto status = handle.status();
 		row[m_Columns.m_col_progress] = status.progress_ppm / 10000;
 		row[m_Columns.m_col_state] = TorrentHandler::state(status);
 		row[m_Columns.m_col_dl] = Formatter::format_size(status.download_payload_rate) + "/s";
@@ -146,7 +153,7 @@ void TTItemWindow::add_torrent_row(const lt::torrent_handle& handle) {
 	auto original = (m_refTreeModel->append());
 
 	Gtk::TreeModel::Row row = *original;
-	row[m_Columns.m_col_id] = m_TorrentHandler.m_Handles.size();
+	row[m_Columns.m_col_id] = m_refTreeModel->children().size();
 	row[m_Columns.m_col_name] = status.name;
 	row[m_Columns.m_col_progress] = status.progress_ppm / 10000;
 	row[m_Columns.m_col_state] = TorrentHandler::state(status);
@@ -166,11 +173,11 @@ void TTItemWindow::remove_selected_rows(bool remove_files) {
 	auto name = row->get_value(m_Columns.m_col_name);
 
 	std::cout << id << ": " << name << std::endl;
-	m_TorrentHandler.RemoveTorrent(name);
+	m_TorrentHandler.RemoveTorrent(name, remove_files);
 
 	if(remove_files) {
-		auto path = m_Item->torrents[id].file_path;
-		ResourceManager::delete_file_with_path(path, name);
+		//auto path = m_Item->torrents[id].file_path;
+		//ResourceManager::delete_file_with_path(path, name);
 		ResourceManager::delete_file(name);
 	}
 
@@ -178,7 +185,7 @@ void TTItemWindow::remove_selected_rows(bool remove_files) {
 	m_refTreeModel->erase(row);
 	auto children = m_refTreeModel->children();
 	for(int i = 1; i <= children.size(); i++) {
-		children[i][m_Columns.m_col_id] = i;
+		children[i-1][m_Columns.m_col_id] = i;
 	}
 	std::cout << "Deleted!" << std::endl;
 }

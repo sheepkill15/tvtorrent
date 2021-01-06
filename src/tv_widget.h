@@ -12,16 +12,17 @@
 #include <gtkmm/progressbar.h>
 #include "torrent_handler.h"
 #include "tv_item.h"
+#include "feed.h"
 
 class TVWidget {
 public:
 	
 	TVWidget() = default;
-	TVWidget(const Glib::ustring& itemName, const Glib::ustring& imgPath);
+	TVWidget(const Glib::ustring& itemName, const Glib::ustring& imgPath, const Glib::ustring& default_path);
 	//TVWidget(const TVWidget& other);
 	virtual ~TVWidget();
 
-	void init(const Glib::ustring& itemName, const Glib::ustring& imgPath);
+	void init(const Glib::ustring& itemName, const Glib::ustring& imgPath, const Glib::ustring& default_path);
 	void SetupTorrents();
 	void update();
 	void notify();
