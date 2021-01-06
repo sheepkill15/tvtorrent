@@ -26,7 +26,6 @@ int main(int argc, char *argv[])
 {
 
 	auto app = Gtk::Application::create("com.sheepkill15.tvtorrent", Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
-
 	ResourceManager::init();
 	SettingsManager::init();
 
@@ -37,6 +36,8 @@ int main(int argc, char *argv[])
 	}
 
 	app->signal_command_line().connect(sigc::bind(sigc::ptr_fun(&on_command_line), app), false);
+
+	std::cout << "Starting!" << std::endl;
 
 	return app->run(main_window);
 	

@@ -35,6 +35,9 @@ public:
     explicit Feed(std::string );
     ~Feed();
     void parse_feed(bool = false);
+
+    static size_t writer(char *data, size_t size, size_t nmemb, std::string *buffer);
+
     //void add_filter(const std::string&, const std::string&, const std::string&);
 
     inline const std::string& GetUrl() const { return RSS_URL; }

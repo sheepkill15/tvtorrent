@@ -42,8 +42,9 @@ TTMainWindow::TTMainWindow()
 
 	set_titlebar(*headerbar);
 
+    std::cout << "Initializing!" << std::endl;
 	init_items();
-
+    std::cout << "Finished initializing!" << std::endl;
 	add(m_VBox);
 
 	m_VBox.pack_start(m_ScrolledWindow);
@@ -142,15 +143,16 @@ void TTMainWindow::init_items() {
 			}
 		}
 	}
-
+    std::cout << "Line 146" << std::endl;
 	Json::Value feed_root;
 
 	ok = ResourceManager::get_feed_save(feed_root);
-
+    std::cout << "Line 150" << std::endl;
 	if(ok) {
 	    for(const auto & i : feed_root["feeds"]) {
 	        add_feed(i.asString());
 	    }
+	    std::cout << "Line 155" << std::endl;
 	    for(const auto& i : feed_root["filters"]) {
             auto& filter =  m_Filters.emplace_back();
             filter.internal_id = filter_count++;
