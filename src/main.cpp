@@ -1,6 +1,7 @@
 #include "giomm/application.h"
 #include "main_window.h"
 #include "resource_manager.h"
+#include "settings_manager.h"
 #include <gtkmm/application.h>
 #include <iostream>
 
@@ -27,6 +28,7 @@ int main(int argc, char *argv[])
 	auto app = Gtk::Application::create("com.sheepkill15.tvtorrent", Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
 
 	ResourceManager::init();
+	SettingsManager::init();
 
 	TTMainWindow main_window;
 

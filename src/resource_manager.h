@@ -13,6 +13,7 @@ public:
 
     static void create_torrent_save(const std::vector<TVWidget*>& tvw_list );
     static Glib::ustring get_resource_path(const Glib::ustring& name);
+    static Glib::ustring get_save_path(const Glib::ustring& name);
     static bool get_torrent_save(Json::Value& root);
     static void delete_file(const std::string& path);
 

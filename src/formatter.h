@@ -41,8 +41,6 @@ class Formatter {
         return Glib::ustring::format(seconds / WEEK, " w ") + Glib::ustring::format(seconds % WEEK / DAY, " d ", seconds % DAY / HOUR, " h ");
     }
 
-    private:
-
     constexpr const static float KILOBYTE = 1024;
 	constexpr const static float MEGABYTE = 1024*1024;
 	constexpr const static float GIGABYTE = 1024.F*1024*1024;

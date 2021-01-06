@@ -12,6 +12,7 @@
 #include "gtkmm/hvbox.h"
 #include "item_window.h"
 #include "tv_widget.h"
+#include "settings_window.h"
 #include <gtkmm/window.h>
 #include <gtkmm/scrolledwindow.h>
 #include <regex>
@@ -26,6 +27,7 @@ public:
 
 	void external_torrent(char argv[]);
     void add_feed(const Glib::ustring& url);
+    void update_limits();
     Feed::Filter& add_filter();
 
 
@@ -44,12 +46,13 @@ protected:
 	bool on_tvwidget_double_click(GdkEventButton* ev);
 	void on_item_window_hide(TTItemWindow* window);
 	void on_feedcontrol_window_hide();
+	void on_settings_window_hide();
 
 	void add_item(const Glib::ustring& name, const Glib::ustring& img_path, const Glib::ustring& default_path);
 	void init_items();
 
 	void check_feeds();
-	static bool check_if_already_downloaded(const std::string&, const std::smatch&);
+	static bool check_if_already_downloaded(const std::vector<std::string>&, const std::smatch&);
 
 	std::thread check;
     mutable std::mutex m_Mutex;
@@ -62,6 +65,7 @@ protected:
     Glib::RefPtr<Gtk::Builder> m_refBuilder;
 
     TTFeedControlWindow* feed_control_window = nullptr;
+    TTSettingsWindow* settings_window = nullptr;
     std::vector<Feed::Filter> m_Filters;
 
 

@@ -8,6 +8,9 @@
 #include "macros.h"
 #include "resource_manager.h"
 #include "feed_control_window.h"
+#include "settings_manager.h"
+#include "feed.h"
+#include "item_window.h"
 
 TTMainWindow::TTMainWindow()
 	: tvw_list()
@@ -66,6 +69,8 @@ TTMainWindow::~TTMainWindow() {
     }
 
     ResourceManager::create_feed_save(feeds, m_Filters, m_Downloaded);
+
+    SettingsManager::save();
 
 	for(auto tvw : tvw_list) {
 		delete tvw;
@@ -221,7 +226,12 @@ void TTMainWindow::on_button_remove() {
 }
 
 void TTMainWindow::on_button_settings() {
-	
+	if(settings_window != nullptr) {
+	    settings_window->window->show();
+	    return;
+	}
+	settings_window = new TTSettingsWindow(this);
+	settings_window->window->ON_HIDE(&TTMainWindow::on_settings_window_hide);
 }
 
 bool TTMainWindow::on_tvwidget_double_click(GdkEventButton* ev) {
@@ -259,6 +269,12 @@ void TTMainWindow::on_feedcontrol_window_hide() {
 
 void TTMainWindow::add_feed(const Glib::ustring &url) {
     feed_list.push_back(new Feed(url));
+    auto feed = feed_list.back();
+    for(int i = 0; i < feed_list.size() - 1; i++) {
+        if(feed_list[i]->channel_data.title == feed->channel_data.title) {
+            feed->channel_data.title += " (1)";
+        }
+    }
 }
 
 Feed::Filter& TTMainWindow::add_filter() {
@@ -274,6 +290,25 @@ namespace {
             str.replace(start_pos, from.length(), to);
             start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
         }
+    }
+    size_t split(const std::string &txt, std::vector<std::string> &strs, char ch)
+    {
+        size_t pos = txt.find( ch );
+        size_t initialPos = 0;
+        strs.clear();
+
+        // Decompose statement
+        while( pos != std::string::npos ) {
+            strs.push_back( txt.substr( initialPos, pos - initialPos ) );
+            initialPos = pos + 1;
+
+            pos = txt.find( ch, initialPos );
+        }
+
+        // Add the last one
+        strs.push_back( txt.substr( initialPos, std::min( pos, txt.size() ) - initialPos + 1 ) );
+
+        return strs.size();
     }
 }
 
@@ -293,14 +328,21 @@ void TTMainWindow::check_feeds() {
                 ReplaceAll(filter_processed, "X", "[0-9]");
                 filter_processed += "\\b";
                 std::regex re(filter_processed);
+                std::vector<std::string> name_split;
+                split(filter.name, name_split, ' ');
                 for(auto& feed : feed_list) {
                     for(auto& item : feed->GetItems()) {
-                        if(item.title.find(filter.name) != std::string::npos) {
+                        bool ok = true;
+                        for(auto& s : name_split) {
+                            if(item.title.find(s) == std::string::npos)
+                                ok = false;
+                        }
+                        if(ok) {
                             std::smatch m;
                             bool const matched = std::regex_search(item.title, m, re);
                             if(matched) {
-                                bool const ok = check_if_already_downloaded(filter.name, m);
-                                if(ok) {
+                                bool const ifAlreadyDownloaded = check_if_already_downloaded(name_split, m);
+                                if(ifAlreadyDownloaded) {
                                     m_Downloaded.push_back(item.title);
                                     for(auto tvw : tvw_list) {
                                         if(tvw->GetName() == filter.tvw) {
@@ -323,13 +365,30 @@ skip:
     }
 }
 
-bool TTMainWindow::check_if_already_downloaded(const std::string& name, const std::smatch& m) {
+bool TTMainWindow::check_if_already_downloaded(const std::vector<std::string>& name, const std::smatch& m) {
     for(auto& item : m_Downloaded) {
-        if(item.find(name) != std::string::npos && item.find(m[0]) != std::string::npos) {
+        bool ok = true;
+        for(auto& s : name) {
+            if(item.find(s) == std::string::npos) {
+                ok = false;
+            }
+        }
+        if(ok && item.find(m[0])) {
             return false;
         }
     }
-    std::cout << name << ' ' << m[0] << std::endl;
+    std::cout << name[0] << ' ' << m[0] << std::endl;
     return true;
+}
+
+void TTMainWindow::on_settings_window_hide() {
+    delete settings_window;
+    settings_window = nullptr;
+}
+
+void TTMainWindow::update_limits() {
+    for(auto tvw : tvw_list) {
+        tvw->GetHandler().update_limits();
+    }
 }
 

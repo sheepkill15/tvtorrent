@@ -234,16 +234,45 @@ void TTFeedControlWindow::on_feed_list_item_click(Gtk::CheckButton* btn) {
     update_results();
 }
 
+namespace {
+    size_t split(const std::string &txt, std::vector<std::string> &strs, char ch)
+    {
+        size_t pos = txt.find( ch );
+        size_t initialPos = 0;
+        strs.clear();
+
+        // Decompose statement
+        while( pos != std::string::npos ) {
+            strs.push_back( txt.substr( initialPos, pos - initialPos ) );
+            initialPos = pos + 1;
+
+            pos = txt.find( ch, initialPos );
+        }
+
+        // Add the last one
+        strs.push_back( txt.substr( initialPos, std::min( pos, txt.size() ) - initialPos + 1 ) );
+
+        return strs.size();
+    }
+}
+
 void TTFeedControlWindow::update_results() {
     if(selected_filter == nullptr) return;
     for(auto child : result_list->get_children()) {
         result_list->remove(*child);
     }
+    std::vector<std::string> name_split;
+    split(selected_filter->name, name_split, ' ');
     for(const auto& feed : selected_filter->feeds) {
         for(const auto& item : parent->feed_list) {
             if(item->channel_data.title == feed) {
                 for(const auto& feed_item : item->GetItems()) {
-                    if(feed_item.title.find(selected_filter->name) != std::string::npos) {
+                    bool ok = true;
+                    for(auto& s : name_split) {
+                        if(feed_item.title.find(s) == std::string::npos)
+                            ok = false;
+                    }
+                    if(ok) {
                         result_list->append(*Gtk::make_managed<Gtk::Label>(feed_item.title));
                     }
                 }

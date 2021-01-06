@@ -19,7 +19,7 @@ class TorrentHandler {
 		//std::vector<lt::torrent_status const * > FetchTorrentUpdates();
 		void do_work();
 		void signal_stop();
-
+        void update_limits();
 		int subscribe(const std::function<void()>& callback);
 		void unsubscribe(int id);
 

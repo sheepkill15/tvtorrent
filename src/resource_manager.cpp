@@ -26,6 +26,8 @@ void ResourceManager::init() {
 	    RESOURCE_DIRECTORY = "res";
 	else if(std::filesystem::exists("../res"))
 	    RESOURCE_DIRECTORY = "../res";
+	else if(std::filesystem::exists(R"(C:\Program Files (x86)\tvtorrent)"))
+	    RESOURCE_DIRECTORY = R"(C:\Program Files (x86)\tvtorrent)";
     create_if_doesnt_exist(SAVE_DIRECTORY);
 }
 
@@ -69,7 +71,7 @@ void ResourceManager::create_torrent_save(const std::vector<TVWidget *> &tvw_lis
 	builder["indentation"] = "\t";
 	std::string document = Json::writeString(builder, value);
 
-    std::string path = SAVE_DIRECTORY + DELIM + "item_data";
+    std::string path = get_save_path("item_data");
 
 	std::ofstream of(path, std::ios::out | std::ios::trunc);
 	of << document;
@@ -109,7 +111,7 @@ void ResourceManager::create_feed_save(const std::vector<Glib::ustring> &feeds, 
     Json::StreamWriterBuilder builder;
     builder["indentation"] = "\t";
     std::string document = Json::writeString(builder, value);
-    std::string path = SAVE_DIRECTORY + DELIM + "feed_data";
+    std::string path = get_save_path("feed_data");
 
     std::ofstream of(path, std::ios::out | std::ios::trunc);
     of << document;
@@ -120,7 +122,7 @@ bool ResourceManager::get_torrent_save(Json::Value &root) {
     Json::CharReaderBuilder builder;
 	builder["collectComments"] = false;
 	std::string errs;
-    std::string path = SAVE_DIRECTORY + DELIM + "item_data";
+    std::string path = get_save_path("item_data");
 	std::ifstream savefile(path, std::ios::in);
     if(savefile.fail()) return false;
 	bool ok = Json::parseFromStream(builder, savefile, &root, &errs);
@@ -135,7 +137,7 @@ bool ResourceManager::get_feed_save(Json::Value &root) {
     Json::CharReaderBuilder builder;
     builder["collectComments"] = false;
     std::string errs;
-    std::string path = SAVE_DIRECTORY + DELIM + "feed_data";
+    std::string path = get_save_path("feed_data");
     std::ifstream savefile(path, std::ios::in);
     if(savefile.fail()) return false;
     bool ok = Json::parseFromStream(builder, savefile, &root, &errs);
@@ -171,9 +173,13 @@ void ResourceManager::delete_file_with_path(const std::string& path, const std::
 }
 
 std::string ResourceManager::get_torrent_save_dir(bool delim) {
-    std::string path = SAVE_DIRECTORY + DELIM + "torrents";
+    std::string path = get_save_path("torrents");
     if(delim) path += DELIM;
     create_if_doesnt_exist(path);
     return path;
+}
+
+Glib::ustring ResourceManager::get_save_path(const Glib::ustring &name) {
+    return Glib::ustring::format(SAVE_DIRECTORY, DELIM, name);
 }
 

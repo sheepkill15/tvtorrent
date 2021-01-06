@@ -7,7 +7,9 @@
 #include <libtorrent/write_resume_data.hpp>
 #include "item_window.h"
 #include "resource_manager.h"
+#include "settings_manager.h"
 #include "main_window.h"
+#include "formatter.h"
 #include <mutex>
 #include <thread>
 #include <chrono>
@@ -118,8 +120,8 @@ lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std:
 	}
 	if(add)
         TTMainWindow::m_Downloaded.push_back(params.name);
-	params.download_limit = 7000000;
-	params.upload_limit = 7000000;
+	params.download_limit = SettingsManager::get_settings().dl_limit * Formatter::MEGABYTE;
+	params.upload_limit = SettingsManager::get_settings().ul_limit * Formatter::MEGABYTE;
 	params.save_path = file_path;
 	auto handle = _ses.add_torrent(std::move(params));
 	m_Handles.insert(std::make_pair(handle.status().name, handle));
@@ -135,6 +137,14 @@ void TorrentHandler::RemoveTorrent(const std::string& name, bool remove_files) {
     if(remove_files)
 	    _ses.remove_torrent(handle, lt::session_handle::delete_files);
     else _ses.remove_torrent(handle);
+}
+
+void TorrentHandler::update_limits() {
+    std::lock_guard<std::mutex> lock(m_Mutex);
+    for(auto& pair : m_Handles) {
+        pair.second.set_download_limit(SettingsManager::get_settings().dl_limit * Formatter::MEGABYTE);
+        pair.second.set_upload_limit(SettingsManager::get_settings().ul_limit * Formatter::MEGABYTE);
+    }
 }
 
 int TorrentHandler::subscribe(const std::function<void()>& callback) {
