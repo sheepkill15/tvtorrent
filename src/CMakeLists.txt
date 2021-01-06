@@ -1,16 +1,25 @@
 
 file(GLOB SRC "./*.cpp")
 
+set(RES_FILES "")
+
+if(MINGW)
+    set(RES_FILES "build.rc" "info.rc")
+    set(CMAKE_RC_COMPILER_INIT windres)
+    ENABLE_LANGUAGE(RC)
+    set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> -O coff -i <SOURCE> -o <OBJECT>")
+endif(MINGW)
+
 if(NOT WIN32)
-add_executable(tvtorrent ${SRC})
+add_executable(tvtorrent ${SRC} ${RES_FILES})
 endif()
 if(WIN32)
 
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        add_executable(tvtorrent ${SRC})
+        add_executable(tvtorrent ${SRC} ${RES_FILES})
     endif()
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        add_executable(tvtorrent WIN32 ${SRC})
+        add_executable(tvtorrent WIN32 ${SRC} ${RES_FILES})
     endif()
 
 endif()
