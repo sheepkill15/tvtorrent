@@ -11,19 +11,19 @@ if(MINGW)
 endif(MINGW)
 
 if(NOT WIN32)
-add_executable(tvtorrent ${SRC} ${RES_FILES})
+add_executable(TVTorrent ${SRC} ${RES_FILES})
 endif()
 if(WIN32)
 
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        add_executable(tvtorrent ${SRC} ${RES_FILES})
+        add_executable(TVTorrent ${SRC} ${RES_FILES})
     endif()
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        add_executable(tvtorrent WIN32 ${SRC} ${RES_FILES})
+        add_executable(TVTorrent WIN32 ${SRC} ${RES_FILES})
     endif()
 
 endif()
-target_compile_features(tvtorrent PRIVATE cxx_std_17)
+target_compile_features(TVTorrent PRIVATE cxx_std_17)
 
 
 set(CMAKE_THREAD_LIBS_INIT "-lpthread")
@@ -73,7 +73,7 @@ if(NOT WIN32)
 install(DIRECTORY DESTINATION /usr/local/share/TVTorrent)
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/res DESTINATION /usr/local/share/TVTorrent)
 
-install(TARGETS tvtorrent DESTINATION bin)
+install(TARGETS TVTorrent DESTINATION bin)
 endif()
 
 if(WIN32)
@@ -81,7 +81,7 @@ if(WIN32)
     install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX})
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/res DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-    install(TARGETS tvtorrent DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+    install(TARGETS TVTorrent DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 endif()
 
@@ -89,7 +89,7 @@ endif()
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${CMAKE_SOURCE_DIR}/src/res DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-target_link_libraries(tvtorrent PRIVATE ${GTKMM_LIBRARIES}
+target_link_libraries(TVTorrent PRIVATE ${GTKMM_LIBRARIES}
     ${LIBTORRENT_LIBRARIES}
     ${JSONCPP_LIBRARIES}
     ${CURL_LIBRARIES}

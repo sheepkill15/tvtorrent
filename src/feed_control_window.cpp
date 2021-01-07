@@ -115,6 +115,15 @@ void TTFeedControlWindow::on_remove_filter() {
         i++;
     }
 done:
+    i = 0;
+    for(auto entry : m_Filters) {
+        if(*id == *static_cast<int*>(entry->get_data("filter_id"))) {
+            m_Filters.erase(m_Filters.begin() + i);
+            break;
+        }
+        i++;
+    }
+
     filter_list->remove(*selected);
 
     selected_filter = nullptr;
@@ -159,7 +168,7 @@ void TTFeedControlWindow::on_remove_feed() {
 }
 
 void TTFeedControlWindow::on_filter_activate(Gtk::ListBoxRow* row) {
-
+    if(row == nullptr) return;
     int* internal_id = static_cast<int *>(row->get_child()->get_data("filter_id"));
     for(auto& filter : parent->GetFilters()) {
         if(filter.internal_id == *internal_id) {
@@ -280,6 +289,5 @@ void TTFeedControlWindow::update_results() {
 
 bool TTFeedControlWindow::on_filter_pressed(GdkEventButton* ev, Gtk::ListBoxRow* row) {
     filter_list->select_row(*row);
-    row->activate();
     return true;
 }
