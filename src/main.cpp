@@ -2,6 +2,7 @@
 #include "main_window.h"
 #include "resource_manager.h"
 #include "settings_manager.h"
+#include "logger.h"
 
 namespace
 {
@@ -17,12 +18,18 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
 int main(int argc, char *argv[])
 {
 	auto app = Gtk::Application::create("com.sheepkill15.tvtorrent", Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
+	Logger::init();
 	ResourceManager::init();
 	SettingsManager::init();
 
+	Logger::info("Application initialized");
+
 	TTMainWindow main_window;
 
+	Logger::info("Main window initialized");
+
 	if(argc == 2) {
+	    Logger::info(std::string("Received external uri: ") + argv[1]);
 		main_window.external_torrent(argv[1]);
 	}
 

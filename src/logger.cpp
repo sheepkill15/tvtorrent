@@ -1,0 +1,79 @@
+//
+// Created by simon on 2021. jan. 7..
+//
+
+#include "logger.h"
+#include <filesystem>
+#include <chrono>
+
+using clk = std::chrono::system_clock;
+
+#if defined(_WIN64) || defined(_WIN32) // Windows platform specific
+
+namespace {
+    void create_if_doesnt_exist(const std::string& path) {
+        if(!std::filesystem::is_directory(path) || !std::filesystem::exists(path)) {
+            std::filesystem::create_directory(path);
+        }
+    }
+
+    std::string LOG_DIRECTORY;
+    constexpr const char DELIM = '\\';
+
+    std::string formatted_now() {
+        std::stringstream ss;
+        auto now = clk::to_time_t(clk::now());
+        ss << '[' << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M") << ']';
+        return ss.str();
+    }
+}
+
+void Logger::init() {
+    LOG_DIRECTORY = std::string(getenv("APPDATA")) + "\\TVTorrent\\logs";
+    create_if_doesnt_exist(LOG_DIRECTORY);
+
+    logfile = std::ofstream(LOG_DIRECTORY + DELIM + "latest.log", std::ios::out | std::ios::app);
+    if(logfile.fail()) {
+        error("Log file couldn't be instantiated!");
+        return;
+    }
+    info("Initialized logging!");
+}
+
+#else // Linux platform specific
+
+namespace {
+    static std::string SAVE_DIRECTORY;
+    constexpr const char DELIM = '/';
+}
+
+void Logger::init() {
+	LOG_DIRECTORY = std::string(getenv("HOME")) + "/.local/TVTorrent/logs";
+    create_if_doesnt_exist(LOG_DIRECTORY);
+
+    logfile = std::ofstream(LOG_DIRECTORY + DELIM + "latest.log", std::ios::out | std::ios::app);
+    if(logfile.fail()) {
+        error("Log file couldn't be instantiated!");
+        return;
+    }
+    info("Initialized logging!");
+}
+
+#endif
+void Logger::info(const std::string &info) {
+    logfile << formatted_now() << " i: " << info << std::endl;
+}
+
+void Logger::debug(const std::string &info) {
+    logfile << formatted_now() << " d: " << info << std::endl;
+
+}
+
+void Logger::error(const std::string &info) {
+    logfile << formatted_now() << " e: " << info << std::endl;
+
+}
+
+void Logger::warning(const std::string &info) {
+    logfile << formatted_now() << " w: " << info << std::endl;
+}
