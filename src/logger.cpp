@@ -32,11 +32,16 @@ void Logger::init() {
     LOG_DIRECTORY = std::string(getenv("APPDATA")) + "\\TVTorrent\\logs";
     create_if_doesnt_exist(LOG_DIRECTORY);
 
-    logfile = std::ofstream(LOG_DIRECTORY + DELIM + "latest.log", std::ios::out | std::ios::app);
+    logfile = std::ofstream(LOG_DIRECTORY + DELIM + "latest.log", std::ios::out | std::ios::trunc);
     if(logfile.fail()) {
-        error("Log file couldn't be instantiated!");
+        std::cerr << "Log file couldn't be instantiated!" << std::endl;
         return;
     }
+
+    coutbuf = std::cout.rdbuf();
+    //logfile << coutbuf;
+    std::cout.rdbuf(logfile.rdbuf());
+
     info("Initialized logging!");
 }
 
@@ -56,6 +61,9 @@ void Logger::init() {
         error("Log file couldn't be instantiated!");
         return;
     }
+    coutbuf = std::cout.rdbuf();
+    logfile << coutbuf;
+    std::cout.rdbuf(logfile.rdbuf());
     info("Initialized logging!");
 }
 
@@ -76,4 +84,12 @@ void Logger::error(const std::string &info) {
 
 void Logger::warning(const std::string &info) {
     logfile << formatted_now() << " w: " << info << std::endl;
+}
+
+void Logger::cleanup() {
+
+    std::cout.rdbuf(coutbuf);
+
+    info("Cleanup complete");
+    logfile.close();
 }

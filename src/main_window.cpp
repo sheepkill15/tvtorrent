@@ -8,6 +8,7 @@
 #include "resource_manager.h"
 #include "feed_control_window.h"
 #include "settings_manager.h"
+#include "logger.h"
 
 TTMainWindow::TTMainWindow()
 	: tvw_list()
@@ -77,6 +78,8 @@ TTMainWindow::~TTMainWindow() {
 
 	should_work = false;
 	check.detach();
+
+	Logger::cleanup();
 }
 
 void TTMainWindow::external_torrent(char argv[]) {

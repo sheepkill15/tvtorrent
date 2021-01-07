@@ -14,6 +14,7 @@ public:
     ~Logger() = default;
 
     static void init();
+    static void cleanup();
 
     static void info(const std::string&);
     static void debug(const std::string&);
@@ -22,6 +23,7 @@ public:
 
 private:
     inline static std::ofstream logfile; // NOLINT(cert-err58-cpp)
+    inline static std::streambuf *coutbuf;
 };
 
 
