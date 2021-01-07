@@ -22,7 +22,7 @@ class TTFeedControlWindow;
 class TTMainWindow : public Gtk::Window {
 
 public:
-	TTMainWindow();
+	explicit TTMainWindow(std::function<void(const std::string&)>);
 	~TTMainWindow() override;
 
 	void external_torrent(char argv[]);
@@ -48,6 +48,8 @@ protected:
 	void on_feedcontrol_window_hide();
 	void on_settings_window_hide();
 
+	void on_torrent_complete(const lt::torrent_status&);
+
 	void add_item(const Glib::ustring& name, const Glib::ustring& img_path, const Glib::ustring& default_path);
 	void init_items();
 
@@ -69,6 +71,7 @@ protected:
     TTSettingsWindow* settings_window = nullptr;
     std::vector<Feed::Filter> m_Filters;
 
+    std::function<void(const std::string&)> notify_cb;
 
     int filter_count = 0;
 };

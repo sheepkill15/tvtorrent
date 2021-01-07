@@ -4,14 +4,16 @@
 #include <gtkmm/toolbar.h>
 #include <gtkmm/comboboxtext.h>
 #include <memory>
+#include <utility>
 #include "macros.h"
 #include "resource_manager.h"
 #include "feed_control_window.h"
 #include "settings_manager.h"
 #include "logger.h"
 
-TTMainWindow::TTMainWindow()
-	: tvw_list()
+TTMainWindow::TTMainWindow(std::function<void(const std::string&)> notification_cb)
+	: tvw_list(),
+	notify_cb(std::move(notification_cb))
 {
 	set_title("TVTorrent");
 	set_border_width(10);
@@ -50,7 +52,6 @@ TTMainWindow::TTMainWindow()
 	m_FlowBox.ON_BUTTON_PRESSED(&TTMainWindow::on_tvwidget_double_click);
 
 	show_all_children();
-
 
     check = std::thread([this] {check_feeds();});
 }
@@ -175,7 +176,7 @@ void TTMainWindow::add_item(const Glib::ustring& name, const Glib::ustring& img_
 
 	tvw_list.push_back(new TVWidget(name, img_path, default_path));
 	m_FlowBox.insert(tvw_list.back()->GetBox(), tvw_list.size() - 1);
-
+    tvw_list.back()->GetHandler().subscribe_for_completed([this](const lt::torrent_status& callback) {TTMainWindow::on_torrent_complete(callback);});
 	show_all_children();
 }
 
@@ -396,5 +397,9 @@ void TTMainWindow::refresh_check() {
     check.detach();
 
     check = std::thread([this] {check_feeds();});
+}
+
+void TTMainWindow::on_torrent_complete(const lt::torrent_status& stat) {
+    notify_cb(stat.name + " finished downloading!");
 }
 

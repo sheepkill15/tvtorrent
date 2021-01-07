@@ -8,21 +8,26 @@
 #include <shellapi.h>
 #include <windows.h>
 #include <sphelper.h>
+#include <commctrl.h>
+#include <gdk/gdkwin32.h>
+
 #define APPWM_ICONNOTIFY (WM_APP + 1)
 #define APP_ICON_OPEN (WM_APP + 2)
 #define APP_ICON_EXIT (WM_APP + 3)
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 #endif
 
 namespace
 {
     Glib::RefPtr<Gtk::Application> app;
     TTMainWindow* main_window;
+    HWND hwnd;
 
 #if defined(WIN32) || defined(WIN64)
     NOTIFYICONDATA nid = {};
     HMENU hMenu;
+    LPCTSTR lpszClass = "__hidden__";
 
     void ShowContextMenu(HWND hWnd)
     {
@@ -45,6 +50,43 @@ namespace
                 nullptr
         );
     }
+    
+    void ShowNotification(const std::string& text) {
+//        HINSTANCE g_hinst = GetModuleHandle(nullptr);
+//        HWND hwndToolTips = CreateWindow(TOOLTIPS_CLASS, nullptr,
+//                             WS_POPUP | TTS_NOPREFIX | TTS_BALLOON,
+//                             0, 0, 0, 0, nullptr, nullptr, g_hinst, nullptr);
+//        if(hwndToolTips) {
+//            TOOLINFO ti;
+//            ti.cbSize = sizeof(ti);
+//            ti.uFlags = TTF_TRANSPARENT | TTF_CENTERTIP;
+//            ti.hwnd = hwnd;
+//            ti.uId = 0;
+//            ti.hinst = nullptr;
+//            ti.lpszText = LPSTR_TEXTCALLBACK;
+//            GetClientRect(hwnd, &ti.rect);
+//            SendMessage(hwndToolTips, TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(&ti));
+//        }
+//        NOTIFYICONDATA IconData = {0};
+//
+//        IconData.cbSize = sizeof(IconData);
+//        IconData.hWnd   = hwnd;
+//        IconData.uFlags = NIF_INFO;
+
+        HRESULT hr = StringCchCopy(nid.szInfo,
+                                   ARRAYSIZE(nid.szInfo),
+                                   TEXT(text.c_str()));
+
+        if(FAILED(hr))
+        {
+            Logger::error("Failed to create notification");
+        }
+        nid.uTimeout = 15000; // in milliseconds
+
+        Shell_NotifyIcon(NIM_MODIFY, &nid);
+
+        Logger::info("Submitted notification");
+    }
 
 #endif
 
@@ -56,7 +98,6 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
     Logger::info("Trying to create notification icon");
 
 
-    LPCTSTR lpszClass = "__hidden__";
     auto hIcon = static_cast<HICON>(LoadImage(nullptr,
                                               TEXT(ResourceManager::get_resource_path("icon.ico").c_str()),
                                               IMAGE_ICON,
@@ -66,9 +107,7 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
     Logger::info("Retrieved icon");
 
     HINSTANCE hInstance = GetModuleHandle(nullptr);
-
     WNDCLASS wc;
-    HWND hwnd;
 
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
@@ -102,7 +141,7 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
     nid.cbSize = sizeof(nid);
     nid.hWnd = hwnd;
     nid.uID = 1;
-    nid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE;
+    nid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE | NIF_INFO;
     nid.uCallbackMessage = APPWM_ICONNOTIFY;
     nid.hIcon = hIcon;
 
@@ -117,6 +156,7 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
     if(succ)
         Logger::info("Created notification icon");
     else Logger::error("Failed to create notification icon");
+
 #endif
   return EXIT_SUCCESS;
 }
@@ -132,7 +172,7 @@ int main(int argc, char *argv[])
 
 	Logger::info("Application initialized");
 
-	main_window = new TTMainWindow();
+	main_window = new TTMainWindow(ShowNotification);
 
 	Logger::info("Main window initialized");
 
@@ -162,7 +202,7 @@ void HideWindow() {
 }
 
 #if defined(WIN32) || defined(WIN64)
-LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
@@ -179,13 +219,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                             goto skip;
                         }
 
-                        SendMessage(hwnd, WM_COMMAND, uild, 0);
+                        SendMessage(hWnd, WM_COMMAND, uild, 0);
                     }
 skip:
                     break;
                 case WM_RBUTTONUP:
                     //...
-                    ShowContextMenu(hwnd);
+                    ShowContextMenu(hWnd);
                     break;
                 default:
                     break;
@@ -212,6 +252,6 @@ skip:
             break;
     }
 
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 #endif
