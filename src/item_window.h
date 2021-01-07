@@ -49,10 +49,11 @@ public:
 	void add_torrent(const Glib::ustring& magnet_url, const Glib::ustring& file_path);
 	//void update_torrents(TTItemWindow* caller);
 	void update_torrent_views();
-	void add_torrent_row(const lt::torrent_handle& handle);
+	void add_torrent_row();
 	void remove_selected_rows(bool remove_files);
 
 	void notify();
+	void notify_added();
 
 protected:
 	Gtk::Box m_Box;
@@ -72,8 +73,10 @@ private:
 	Glib::RefPtr<Gtk::Builder> remove_builder;
 
 	Glib::Dispatcher m_Dispatcher;
+	Glib::Dispatcher m_Dispatcher_for_added;
 
 	int subscription;
+	int subscription_for_added;
 };
 
 #endif

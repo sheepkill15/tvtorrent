@@ -52,67 +52,19 @@ TorrentHandler::~TorrentHandler() {
     for(auto& pair : m_Handles) {
         _ses.remove_torrent(pair.second);
     }
+    for(auto& pair : m_Threads) {
+        pair.second.detach();
+    }
+    m_Threads.clear();
     m_Handles.clear();
 }
 
-lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std::string& file_path)
+void TorrentHandler::AddTorrent(const std::string &url, const std::string& file_path)
 {
-
-	lt::add_torrent_params params;
-
-	if(url.rfind("magnet:?", 0) == 0) {
-		params = lt::parse_magnet_uri(url);
-	}
-	else if(url.rfind("https://") == 0) {
-	    std::string buffer;
-        auto curl = curl_easy_init();
-        if(curl) {
-            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-            curl_easy_setopt(curl, CURLOPT_HEADER, 0);
-            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0); /* Don't follow anything else than the particular url requested*/
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &Feed::writer);	/* Function Pointer "writer" manages the required buffer size */
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer ); /* Data Pointer &buffer stores downloaded web content */
-            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-        } else {
-            return lt::torrent_handle();
-        }
-        curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-
-        lt::torrent_info info(buffer.c_str(), buffer.size());
-        params = lt::parse_magnet_uri(lt::make_magnet_uri(info));
-	}
-	else {
-		lt::torrent_info info(url);
-		params = lt::parse_magnet_uri(lt::make_magnet_uri(info));
-	}
-	
-	for(const auto& entry : std::filesystem::directory_iterator(ResourceManager::get_torrent_save_dir())) {
-		std::ifstream ifs(entry.path(), std::ios_base::binary);
-		ifs.unsetf(std::ios_base::skipws);
-		std::vector<char> buf{std::istream_iterator<char>(ifs), std::istream_iterator<char>()};
-		if(!buf.empty()) {
-			auto atp = lt::read_resume_data(buf);
-			if(atp.info_hash == params.info_hash) {params = std::move(atp);
-				break;
-			}
-		}
-	}
-	bool add = true;
-	for(auto& download : TTMainWindow::m_Downloaded) {
-	    if(params.name == download) {
-	        add = false;
-	        break;
-	    }
-	}
-	if(add)
-        TTMainWindow::m_Downloaded.push_back(params.name);
-	params.download_limit = SettingsManager::get_settings().dl_limit * Formatter::MEGABYTE;
-	params.upload_limit = SettingsManager::get_settings().ul_limit * Formatter::MEGABYTE;
-	params.save_path = file_path;
-	auto handle = _ses.add_torrent(std::move(params));
-	m_Handles.insert(std::make_pair(handle.status().name, handle));
-	return handle;
+	std::lock_guard<std::mutex> lock(m_Mutex);
+    size_t curr_count = thread_count;
+	m_Threads.insert(std::make_pair(curr_count, std::thread([this, url, file_path] { TorrentHandler::setup_torrent(url, file_path); })));
+	thread_count++;
 }
 
 void TorrentHandler::RemoveTorrent(const std::string& name, bool remove_files) {
@@ -167,6 +119,13 @@ void TorrentHandler::do_work() {
                 if(!al->handle.is_valid()) continue;
 				al->handle.save_resume_data(lt::torrent_handle::save_info_dict);
 			}
+			if(auto al = lt::alert_cast<lt::add_torrent_alert>(a)) {
+			    if(!al->handle.is_valid()) continue;
+                m_Handles.insert(std::make_pair(al->handle.status().name, al->handle));
+			    for(auto& cb : m_AddedCallbacks) {
+			        cb.second();
+			    }
+			}
 			if(auto rd = lt::alert_cast<lt::save_resume_data_alert>(a)) {
                 if(!rd->handle.is_valid()) continue;
 				std::ofstream of(ResourceManager::get_torrent_save_dir(true) + (rd->handle.status().name), std::ios_base::binary);
@@ -199,4 +158,72 @@ void TorrentHandler::signal_stop() {
 	std::lock_guard<std::mutex> lock(m_Mutex);
 	should_work = false; 
 
+}
+
+int TorrentHandler::subscribe_for_added(const std::function<void()>& callback) {
+    int id = sub_count++;
+    m_AddedCallbacks.insert(std::make_pair(id, callback));
+    return id;
+}
+
+void TorrentHandler::unsubscribe_from_added(int id) {
+    m_AddedCallbacks.erase(id);
+}
+
+void TorrentHandler::setup_torrent(const std::string &url, const std::string &file_path) {
+    std::lock_guard<std::mutex> lock(m_Mutex);
+
+    lt::add_torrent_params params;
+
+    if(url.rfind("magnet:?", 0) == 0) {
+        params = lt::parse_magnet_uri(url);
+    }
+    else if(url.rfind("https://") == 0) {
+        std::string buffer;
+        auto curl = curl_easy_init();
+        if(curl) {
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl, CURLOPT_HEADER, 0);
+            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0); /* Don't follow anything else than the particular url requested*/
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &Feed::writer);	/* Function Pointer "writer" manages the required buffer size */
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer ); /* Data Pointer &buffer stores downloaded web content */
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+        } else {
+            return;
+        }
+        curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+
+        lt::torrent_info info(buffer.c_str(), buffer.size());
+        params = lt::parse_magnet_uri(lt::make_magnet_uri(info));
+    }
+    else {
+        lt::torrent_info info(url);
+        params = lt::parse_magnet_uri(lt::make_magnet_uri(info));
+    }
+
+    for(const auto& entry : std::filesystem::directory_iterator(ResourceManager::get_torrent_save_dir())) {
+        std::ifstream ifs(entry.path(), std::ios_base::binary);
+        ifs.unsetf(std::ios_base::skipws);
+        std::vector<char> buf{std::istream_iterator<char>(ifs), std::istream_iterator<char>()};
+        if(!buf.empty()) {
+            auto atp = lt::read_resume_data(buf);
+            if(atp.info_hash == params.info_hash) {params = std::move(atp);
+                break;
+            }
+        }
+    }
+    bool add = true;
+    for(auto& download : TTMainWindow::m_Downloaded) {
+        if(params.name == download) {
+            add = false;
+            break;
+        }
+    }
+    if(add)
+        TTMainWindow::m_Downloaded.push_back(params.name);
+    params.download_limit = SettingsManager::get_settings().dl_limit * Formatter::MEGABYTE;
+    params.upload_limit = SettingsManager::get_settings().ul_limit * Formatter::MEGABYTE;
+    params.save_path = file_path;
+    _ses.async_add_torrent(std::move(params));
 }

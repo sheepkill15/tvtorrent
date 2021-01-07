@@ -3,6 +3,7 @@
 #include "resource_manager.h"
 #include "settings_manager.h"
 #include "logger.h"
+
 #if defined(WIN32) || defined(WIN64)
 #include <shellapi.h>
 #include <windows.h>
@@ -10,48 +11,47 @@
 #define APPWM_ICONNOTIFY (WM_APP + 1)
 #define APP_ICON_OPEN (WM_APP + 2)
 #define APP_ICON_EXIT (WM_APP + 3)
-#endif
 
-Glib::RefPtr<Gtk::Application> app;
-TTMainWindow* main_window;
-
-#if defined(WIN32) || defined(WIN64)
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-NOTIFYICONDATA nid = {};
-HMENU hMenu;
-
-void ShowContextMenu(HWND hWnd)
-{
-    // Get current mouse position.
-    POINT curPoint;
-    GetCursorPos(&curPoint);
-
-    // should SetForegroundWindow according
-    // to original poster so the popup shows on top
-    SetForegroundWindow(hWnd);
-
-    // TrackPopupMenu blocks the app until TrackPopupMenu returns
-    TrackPopupMenu(
-            hMenu,
-            0,
-            curPoint.x,
-            curPoint.y,
-            0,
-            hWnd,
-            nullptr
-    );
-}
-
-
-
 #endif
 
 namespace
 {
+    Glib::RefPtr<Gtk::Application> app;
+    TTMainWindow* main_window;
+
+#if defined(WIN32) || defined(WIN64)
+    NOTIFYICONDATA nid = {};
+    HMENU hMenu;
+
+    void ShowContextMenu(HWND hWnd)
+    {
+        // Get current mouse position.
+        POINT curPoint;
+        GetCursorPos(&curPoint);
+
+        // should SetForegroundWindow according
+        // to original poster so the popup shows on top
+        SetForegroundWindow(hWnd);
+
+        // TrackPopupMenu blocks the app until TrackPopupMenu returns
+        TrackPopupMenu(
+                hMenu,
+                0,
+                curPoint.x,
+                curPoint.y,
+                0,
+                hWnd,
+                nullptr
+        );
+    }
+
+#endif
+
 int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_line,
-                    Glib::RefPtr<Gtk::Application>& app)
+                    Glib::RefPtr<Gtk::Application>& appPtr)
 {
-    app->activate(); // Without activate() the window won't be shown.
+    appPtr->activate(); // Without activate() the window won't be shown.
 #if defined(WIN32) || defined(WIN64)
     Logger::info("Trying to create notification icon");
 
@@ -91,6 +91,8 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
     hMenu = CreatePopupMenu();
     AppendMenu(hMenu, MF_STRING, APP_ICON_OPEN, "Open");
     AppendMenu(hMenu, MF_STRING, APP_ICON_EXIT, "Exit");
+
+    Logger::info("Created menu");
 
     SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
     SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
@@ -180,12 +182,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                         SendMessage(hwnd, WM_COMMAND, uild, 0);
                     }
 skip:
-                    Logger::info("Left Clicked!");
                     break;
                 case WM_RBUTTONUP:
                     //...
                     ShowContextMenu(hwnd);
-                    Logger::info("Right clicked!");
                     break;
                 default:
                     break;

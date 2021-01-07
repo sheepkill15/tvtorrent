@@ -4,6 +4,7 @@
 #include "tv_widget.h"
 #include "item_window.h"
 #include <filesystem>
+#include <set>
 #include <gtkmm/cellrendererprogress.h>
 #include <gtkmm/filechooserbutton.h>
 #include <gtkmm/checkbutton.h>
@@ -16,6 +17,7 @@
 TTItemWindow::TTItemWindow(TVWidget& item) 
 	: m_Item(&item.GetItem()),
 	m_Dispatcher(),
+	m_Dispatcher_for_added(),
 	m_TorrentHandler(item.GetHandler()),
 	m_Box(Gtk::ORIENTATION_VERTICAL)
 {
@@ -101,12 +103,15 @@ TTItemWindow::TTItemWindow(TVWidget& item)
 	show_all_children();
 
 	for(auto& pair : m_TorrentHandler.m_Handles) {
-		add_torrent_row(pair.second);
+		add_torrent_row();
 	}
 
 	m_TreeView.ON_BUTTON_PRESSED(&TTItemWindow::on_row_pressed);
 
 	m_Dispatcher.ON_DISPATCH(&TTItemWindow::update_torrent_views);
+	m_Dispatcher_for_added.ON_DISPATCH(&TTItemWindow::add_torrent_row);
+
+	subscription_for_added = m_TorrentHandler.subscribe_for_added((const std::function<void()>&) [this] {TTItemWindow::notify_added(); });
 	subscription = m_TorrentHandler.subscribe((const std::function<void()> &) [this] { TTItemWindow::notify(); });
 }
 
@@ -138,13 +143,27 @@ void TTItemWindow::add_torrent(const Glib::ustring& magnet_url, const Glib::ustr
         }
     }
 
-	auto handle = m_TorrentHandler.AddTorrent(magnet_url, file_path);
-	add_torrent_row(handle);
+	m_TorrentHandler.AddTorrent(magnet_url, file_path);
 	m_Item->torrents.push_back({magnet_url, file_path});
 }
 
-void TTItemWindow::add_torrent_row(const lt::torrent_handle& handle) {
-	auto status = handle.status();
+void TTItemWindow::add_torrent_row() {
+    std::set<std::string> names;
+    for(auto& row : m_refTreeModel->children()) {
+        names.insert(row->get_value(m_Columns.m_col_name));
+    }
+
+    lt::torrent_status status;
+    bool found;
+    for(auto& hl : m_TorrentHandler.m_Handles) {
+        auto stat = hl.second.status();
+        if(names.find(stat.name) == names.end()) {
+            status = stat;
+            found = true;
+            break;
+        }
+    }
+    if(!found) return;
 	auto original = (m_refTreeModel->append());
 
 	Gtk::TreeModel::Row row = *original;
@@ -184,6 +203,7 @@ TTItemWindow::~TTItemWindow() {
 	delete m_Dialog;
 	delete m_RemoveDialog;
 	m_TorrentHandler.unsubscribe(subscription);
+	m_TorrentHandler.unsubscribe_from_added(subscription_for_added);
 }
 
 void TTItemWindow::on_button_add() {
@@ -272,4 +292,8 @@ void TTItemWindow::on_torrentremovedialog_response(int response_id) {
 		default:
 			break;
 	}
+}
+
+void TTItemWindow::notify_added() {
+    m_Dispatcher_for_added.emit();
 }

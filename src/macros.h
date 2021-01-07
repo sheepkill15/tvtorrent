@@ -16,6 +16,7 @@
 #define HIDE_DIALOG_ON_CLOSE(dialog) signal_response().connect(sigc::hide(sigc::mem_fun(*(dialog), &Gtk::Widget::hide)))
 #define ON_RESPONSE(ev) signal_response().connect(sigc::mem_fun(*this, ev))
 #define ON_DISPATCH(ev) connect(sigc::mem_fun(*this, ev))
+#define ON_DISPATCH_BIND(ev, types...) connect(sigc::bind<types>(sigc::mem_fun(*this, ev)
 #define ADD_ACTION(name, ev) add_action(name, sigc::mem_fun(*this, ev))
 #define ON_ACTIVATE(ev) signal_activate().connect(sigc::mem_fun(*this, ev))
 #define ON_ACTIVATE_BIND(ev, types...) signal_activate().connect(sigc::bind<types>(sigc::mem_fun(*this, ev)
