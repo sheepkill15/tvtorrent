@@ -3,15 +3,47 @@
 #include "resource_manager.h"
 #include "settings_manager.h"
 #include "logger.h"
+#if defined(WIN32) || defined(WIN64)
 #include <shellapi.h>
 #include <windows.h>
 #include <sphelper.h>
-
 #define APPWM_ICONNOTIFY (WM_APP + 1)
+#define APP_ICON_OPEN (WM_APP + 2)
+#define APP_ICON_EXIT (WM_APP + 3)
+#endif
 
+Glib::RefPtr<Gtk::Application> app;
+TTMainWindow* main_window;
 
 #if defined(WIN32) || defined(WIN64)
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+NOTIFYICONDATA nid = {};
+HMENU hMenu;
+
+void ShowContextMenu(HWND hWnd)
+{
+    // Get current mouse position.
+    POINT curPoint;
+    GetCursorPos(&curPoint);
+
+    // should SetForegroundWindow according
+    // to original poster so the popup shows on top
+    SetForegroundWindow(hWnd);
+
+    // TrackPopupMenu blocks the app until TrackPopupMenu returns
+    TrackPopupMenu(
+            hMenu,
+            0,
+            curPoint.x,
+            curPoint.y,
+            0,
+            hWnd,
+            nullptr
+    );
+}
+
+
+
 #endif
 
 namespace
@@ -23,7 +55,6 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
 #if defined(WIN32) || defined(WIN64)
     Logger::info("Trying to create notification icon");
 
-    NOTIFYICONDATA nid = {};
 
     LPCTSTR lpszClass = "__hidden__";
     auto hIcon = static_cast<HICON>(LoadImage(nullptr,
@@ -57,6 +88,10 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
 
     Logger::info("Created window");
 
+    hMenu = CreatePopupMenu();
+    AppendMenu(hMenu, MF_STRING, APP_ICON_OPEN, "Open");
+    AppendMenu(hMenu, MF_STRING, APP_ICON_EXIT, "Exit");
+
     SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
     SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
 
@@ -88,25 +123,40 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
 
 int main(int argc, char *argv[])
 {
-	auto app = Gtk::Application::create("com.sheepkill15.tvtorrent", Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
+	app = Gtk::Application::create("com.sheepkill15.tvtorrent", Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
 	Logger::init();
 	ResourceManager::init();
 	SettingsManager::init();
 
 	Logger::info("Application initialized");
 
-	TTMainWindow main_window;
+	main_window = new TTMainWindow();
 
 	Logger::info("Main window initialized");
 
 	if(argc == 2) {
 	    Logger::info(std::string("Received external uri: ") + argv[1]);
-		main_window.external_torrent(argv[1]);
+		main_window->external_torrent(argv[1]);
 	}
 
 	app->signal_command_line().connect(sigc::bind(sigc::ptr_fun(&on_command_line), app), false);
+    app->hold();
+	int result = app->run(*main_window);
+    delete main_window;
+#if defined(WIN32) || defined(WIN64)
+	Shell_NotifyIcon(NIM_DELETE, &nid);
+#endif
+	return result;
+}
 
-	return app->run(main_window);
+void OpenWindow() {
+    main_window->show();
+    //app->release();
+}
+
+void HideWindow() {
+    app->release();
+    main_window->hide();
 }
 
 #if defined(WIN32) || defined(WIN64)
@@ -120,18 +170,46 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 case WM_LBUTTONUP:
                     //...
+                    if(hMenu != nullptr) {
+                        UINT uild = GetMenuItemID(hMenu, 0);
+                        if(uild == -1) {
+                            OpenWindow();
+                            goto skip;
+                        }
+
+                        SendMessage(hwnd, WM_COMMAND, uild, 0);
+                    }
+skip:
                     Logger::info("Left Clicked!");
                     break;
                 case WM_RBUTTONUP:
                     //...
+                    ShowContextMenu(hwnd);
                     Logger::info("Right clicked!");
+                    break;
+                default:
                     break;
             }
 
             return 0;
         }
-
-            //...
+        case WM_COMMAND: {
+            int wmld = LOWORD(wParam);
+            // int mwEvent = HIWORD(wParam);
+            switch (wmld) {
+                case APP_ICON_OPEN:
+                    OpenWindow();
+                    break;
+                case APP_ICON_EXIT:
+                    HideWindow();
+                    break;
+                default:
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
     }
 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
