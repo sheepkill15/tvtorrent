@@ -51,6 +51,7 @@ protected:
 	void add_item(const Glib::ustring& name, const Glib::ustring& img_path, const Glib::ustring& default_path);
 	void init_items();
 
+	void refresh_check();
 	void check_feeds();
 	static bool check_if_already_downloaded(const std::vector<std::string>&, const std::smatch&);
 

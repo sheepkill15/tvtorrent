@@ -23,5 +23,6 @@
 #define ON_CHANGE(ev) signal_changed().connect(sigc::mem_fun(*this, ev))
 #define ON_CHANGE_BIND(ev, types...) signal_changed().connect(sigc::bind<types>(sigc::mem_fun(*this, ev)
 #define ON_ROW_ACTIVATED(ev) signal_row_activated().connect(sigc::mem_fun(*this, ev))
+#define ON_ROW_SELECTED(ev) signal_row_selected().connect(sigc::mem_fun(*this, ev))
 
 #endif

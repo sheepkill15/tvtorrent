@@ -106,7 +106,7 @@ void TTMainWindow::external_torrent(char argv[]) {
 			tvw->GetHandler().AddTorrent(argv, file_path->get_filename());
 			break;
 		}
-		case Gtk::RESPONSE_NO
+	    case Gtk::RESPONSE_NO:
 		default:
 			break;
 	}
@@ -125,7 +125,15 @@ void TTMainWindow::init_items() {
 			add_item(root[i]["name"].asString(), root[i]["img_path"].asString(), root[i]["default_path"].asString());
 			if(root[i].isMember("torrents") && root[i]["torrents"]) {
 				for(int j = 0; j < root[i]["torrents"].size(); j++) {
-					tvw_list[i]->GetItem().torrents.push_back({root[i]["torrents"][j]["magnet_uri"].asString(), root[i]["torrents"][j]["file_path"].asString()});
+				    std::string uri = root[i]["torrents"][j]["magnet_uri"].asString();
+				    for(auto& torrent : tvw_list[i]->GetItem().torrents) {
+				        if(torrent.magnet_uri == uri) {
+				            goto skip;
+				        }
+				    }
+					tvw_list[i]->GetItem().torrents.push_back({uri, root[i]["torrents"][j]["file_path"].asString()});
+skip:
+				    ;
 				}
 				tvw_list.back()->SetupTorrents();
 			}
@@ -247,6 +255,7 @@ void TTMainWindow::on_button_feeds() {
 void TTMainWindow::on_feedcontrol_window_hide() {
     delete feed_control_window;
     feed_control_window = nullptr;
+    refresh_check();
 }
 
 void TTMainWindow::add_feed(const Glib::ustring &url) {
@@ -294,6 +303,8 @@ namespace {
     }
 }
 
+
+
 void TTMainWindow::check_feeds() {
     should_work = true;
     while(should_work) {
@@ -304,7 +315,7 @@ void TTMainWindow::check_feeds() {
 //            }
             if(feed_control_window != nullptr) goto skip;
             for(auto& filter : m_Filters) {
-                if(filter.tvw.empty()) continue;
+                if(filter.tvw.empty() || filter.name.empty()) continue;
                 std::string filter_processed = "\\b" + filter.ver_pattern;
                 ReplaceAll(filter_processed, "X", "[0-9]");
                 filter_processed += "\\b";
@@ -327,6 +338,10 @@ void TTMainWindow::check_feeds() {
                                     m_Downloaded.push_back(item.title);
                                     for(auto tvw : tvw_list) {
                                         if(tvw->GetName() == filter.tvw) {
+                                            for(auto& torrent : tvw->GetItem().torrents) {
+                                                if(torrent.magnet_uri == item.link)
+                                                    continue;
+                                            }
                                             tvw->GetHandler().AddTorrent(item.link, tvw->GetItem().default_save_path);
                                             tvw->GetItem().torrents.push_back({item.link, tvw->GetItem().default_save_path});
                                             break;
@@ -354,7 +369,7 @@ bool TTMainWindow::check_if_already_downloaded(const std::vector<std::string>& n
                 ok = false;
             }
         }
-        if(ok && item.find(m[0])) {
+        if(ok && (m[0].str().empty() || item.find(m[0]))) {
             return false;
         }
     }
@@ -370,5 +385,13 @@ void TTMainWindow::update_limits() {
     for(auto tvw : tvw_list) {
         tvw->GetHandler().update_limits();
     }
+}
+
+void TTMainWindow::refresh_check() {
+    std::lock_guard<std::mutex> lock(m_Mutex);
+    should_work = false;
+    check.detach();
+
+    check = std::thread([this] {check_feeds();});
 }
 

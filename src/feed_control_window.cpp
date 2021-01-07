@@ -24,13 +24,14 @@ TTFeedControlWindow::TTFeedControlWindow(TTMainWindow* caller)
     tvw_chooser->ON_CHANGE(&TTFeedControlWindow::on_tvw_changed);
 
     builder->get_widget("FilterList", filter_list);
-    filter_list->ON_ROW_ACTIVATED(&TTFeedControlWindow::on_filter_activate);
+    filter_list->ON_ROW_SELECTED(&TTFeedControlWindow::on_filter_activate);
     for(auto& filter : caller->GetFilters()) {
             auto filter_list_item = Gtk::make_managed<Gtk::Entry>();
             filter_list_item->set_data("filter_id", reinterpret_cast<void *>(&filter.internal_id));
             filter_list_item->set_text(filter.id);
             m_Filters.push_back(filter_list_item);
             filter_list->append(*filter_list_item);
+            filter_list_item->ON_BUTTON_PRESSED_BIND(&TTFeedControlWindow::on_filter_pressed, Gtk::ListBoxRow*), filter_list->get_row_at_index(m_Filters.size() - 1)));
             //filter_list_item->ON_ACTIVATE(&TTFeedControlWindow::on_filter_activate);
     }
     for(auto tvw : caller->tvw_list) {
@@ -93,6 +94,7 @@ void TTFeedControlWindow::on_add_filter() {
     filter_list->append(*filter_list_item);
     filter_list->show_all_children();
 
+    filter_list_item->ON_BUTTON_PRESSED_BIND(&TTFeedControlWindow::on_filter_pressed, Gtk::ListBoxRow*), filter_list->get_row_at_index(m_Filters.size() - 1)));
     filter_list->select_row(*filter_list->get_row_at_index(m_Filters.size()-1));
 
 }
@@ -274,4 +276,10 @@ void TTFeedControlWindow::update_results() {
         }
     }
     result_list->show_all_children();
+}
+
+bool TTFeedControlWindow::on_filter_pressed(GdkEventButton* ev, Gtk::ListBoxRow* row) {
+    filter_list->select_row(*row);
+    row->activate();
+    return true;
 }

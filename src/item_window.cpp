@@ -131,7 +131,13 @@ void TTItemWindow::update_torrent_views() {
 }
 
 void TTItemWindow::add_torrent(const Glib::ustring& magnet_url, const Glib::ustring& file_path) {
-	
+
+    for(auto& torrent : m_Item->torrents) {
+        if(torrent.magnet_uri == magnet_url) {
+            return;
+        }
+    }
+
 	auto handle = m_TorrentHandler.AddTorrent(magnet_url, file_path);
 	add_torrent_row(handle);
 	m_Item->torrents.push_back({magnet_url, file_path});
