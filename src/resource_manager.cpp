@@ -26,8 +26,8 @@ void ResourceManager::init() {
 	    RESOURCE_DIRECTORY = "res";
 	else if(std::filesystem::exists("../res"))
 	    RESOURCE_DIRECTORY = "../res";
-	else if(std::filesystem::exists(R"(C:\Program Files (x86)\tvtorrent)"))
-	    RESOURCE_DIRECTORY = R"(C:\Program Files (x86)\tvtorrent)";
+	else if(std::filesystem::exists(R"(C:\Program Files (x86)\TVTorrent\res)"))
+	    RESOURCE_DIRECTORY = R"(C:\Program Files (x86)\TVTorrent\res)";
     create_if_doesnt_exist(SAVE_DIRECTORY);
 }
 
@@ -155,16 +155,6 @@ Glib::ustring ResourceManager::get_resource_path(const Glib::ustring &name) {
 void ResourceManager::delete_file(const std::string &name) {
     try {
         if(std::filesystem::remove(SAVE_DIRECTORY + DELIM + "torrents" + DELIM + name)) {
-	        std::cout << "Save deleted!" << std::endl;
-	    } else std::cout << "Save not deleted!" << std::endl;
-    } catch(const std::filesystem::filesystem_error& err) {
-			std::cout << "Filesystem error: " << err.what() << std::endl;
-	}
-}
-
-void ResourceManager::delete_file_with_path(const std::string& path, const std::string& name) {
-    try {
-        if(std::filesystem::remove_all(path + DELIM + name)) {
 	        std::cout << "Save deleted!" << std::endl;
 	    } else std::cout << "Save not deleted!" << std::endl;
     } catch(const std::filesystem::filesystem_error& err) {

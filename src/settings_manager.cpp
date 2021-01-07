@@ -3,7 +3,6 @@
 //
 
 #include <fstream>
-#include <iostream>
 #include "settings_manager.h"
 #include "resource_manager.h"
 
@@ -22,7 +21,7 @@ void SettingsManager::init() {
 
     bool ok = Json::parseFromStream(builder, settingsfile, &root, &errs);
     if(!ok)
-        std::cout << errs << std::endl;
+        ;
     else {
         m_Settings.dl_limit = root["dl_limit"].asFloat();
         m_Settings.ul_limit = root["ul_limit"].asFloat();

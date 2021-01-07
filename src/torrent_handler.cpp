@@ -13,20 +13,11 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
-#include <iostream>
 #include <filesystem>
 
 namespace {
 
 using clk = std::chrono::steady_clock;
-    unsigned long long writer(char *data, size_t size, size_t nmemb, std::string *buffer){
-        unsigned long long result = 0;
-        if(buffer != nullptr) {
-            buffer -> append(data, size * nmemb);
-            result = size * nmemb;
-        }
-        return result;
-    }
 
 } // anonymous namespace
 
@@ -67,9 +58,6 @@ TorrentHandler::~TorrentHandler() {
 lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std::string& file_path)
 {
 
-	std :: cout << file_path << std :: endl;
-	std::cout << url << std::endl;
-
 	lt::add_torrent_params params;
 
 	if(url.rfind("magnet:?", 0) == 0) {
@@ -82,10 +70,10 @@ lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std:
             curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
             curl_easy_setopt(curl, CURLOPT_HEADER, 0);
             curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0); /* Don't follow anything else than the particular url requested*/
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);	/* Function Pointer "writer" manages the required buffer size */
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &Feed::writer);	/* Function Pointer "writer" manages the required buffer size */
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer ); /* Data Pointer &buffer stores downloaded web content */
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
         } else {
-            std::cerr << "Curl couldn't be configured! " << std::endl;
             return lt::torrent_handle();
         }
         curl_easy_perform(curl);
@@ -97,7 +85,6 @@ lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std:
 	else {
 		lt::torrent_info info(url);
 		params = lt::parse_magnet_uri(lt::make_magnet_uri(info));
-		std :: cout << "Processed file!" << std::endl;
 	}
 	
 	for(const auto& entry : std::filesystem::directory_iterator(ResourceManager::get_torrent_save_dir())) {
@@ -131,7 +118,7 @@ lt::torrent_handle TorrentHandler::AddTorrent(const std::string &url, const std:
 void TorrentHandler::RemoveTorrent(const std::string& name, bool remove_files) {
 	std::lock_guard<std::mutex> lock(m_Mutex);
     m_Handles[name].pause();
-    auto handle = m_Handles[name];;
+    auto handle = m_Handles[name];
     m_Handles.erase(m_Handles.find(name));
     handle.flush_cache();
     if(remove_files)
@@ -173,13 +160,15 @@ void TorrentHandler::do_work() {
 		for(lt::alert const* a : alerts) {
 			if(auto al = lt::alert_cast<lt::torrent_finished_alert>(a)) {
 				auto handle = al->handle;
+				if(!handle.is_valid()) continue;
 				handle.save_resume_data(lt::torrent_handle::save_info_dict);
 			}
 			if(auto al = lt::alert_cast<lt::torrent_error_alert>(a)) {
-				std::cout << al->message() << std::endl;
+                if(!al->handle.is_valid()) continue;
 				al->handle.save_resume_data(lt::torrent_handle::save_info_dict);
 			}
 			if(auto rd = lt::alert_cast<lt::save_resume_data_alert>(a)) {
+                if(!rd->handle.is_valid()) continue;
 				std::ofstream of(ResourceManager::get_torrent_save_dir(true) + (rd->handle.status().name), std::ios_base::binary);
 				of.unsetf(std::ios_base::skipws);
 				auto const b = write_resume_data_buf(rd->params);
@@ -190,6 +179,7 @@ void TorrentHandler::do_work() {
 
 		if(clk::now() - last_save_resume > std::chrono::seconds(3)) {
 			for(auto& handle : _ses.get_torrents()) {
+			    if(!handle.is_valid()) continue;
 				handle.save_resume_data(lt::torrent_handle::save_info_dict);
 				last_save_resume = clk::now();
 			}

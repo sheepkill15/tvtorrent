@@ -60,8 +60,8 @@ protected:
 	Gtk::TreeView m_TreeView;
 	Glib::RefPtr<Gtk::ListStore> m_refTreeModel;
 
-	Gtk::MessageDialog* m_Dialog;
-	Gtk::MessageDialog* m_RemoveDialog;
+	Gtk::MessageDialog* m_Dialog{};
+	Gtk::MessageDialog* m_RemoveDialog{};
 
 private:
 	TorrentHandler& m_TorrentHandler;

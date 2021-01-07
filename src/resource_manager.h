@@ -20,7 +20,6 @@ public:
     static void create_feed_save(const std::vector<Glib::ustring>& feeds, const std::vector<Feed::Filter>& filters, const std::vector<std::string>& downloads);
     static bool get_feed_save(Json::Value& root);
 
-    static void delete_file_with_path(const std::string& path, const std::string& name);
     static std::string get_torrent_save_dir(bool delim = false);
 
 private:

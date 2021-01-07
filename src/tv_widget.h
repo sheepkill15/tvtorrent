@@ -19,7 +19,6 @@ public:
 	
 	TVWidget() = default;
 	TVWidget(const Glib::ustring& itemName, const Glib::ustring& imgPath, const Glib::ustring& default_path);
-	//TVWidget(const TVWidget& other);
 	virtual ~TVWidget();
 
 	void init(const Glib::ustring& itemName, const Glib::ustring& imgPath, const Glib::ustring& default_path);

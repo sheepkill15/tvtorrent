@@ -3,14 +3,11 @@
 #include "gtkmm/filechooserbutton.h"
 #include <gtkmm/toolbar.h>
 #include <gtkmm/comboboxtext.h>
-#include <iostream>
 #include <memory>
 #include "macros.h"
 #include "resource_manager.h"
 #include "feed_control_window.h"
 #include "settings_manager.h"
-#include "feed.h"
-#include "item_window.h"
 
 TTMainWindow::TTMainWindow()
 	: tvw_list()
@@ -20,7 +17,6 @@ TTMainWindow::TTMainWindow()
 	set_default_size(640, 480);
 
 	m_refBuilder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_headerbar.glade"));
-
 	Gtk::HeaderBar* headerbar = nullptr;
 	m_refBuilder->get_widget("HeaderBar", headerbar);
 
@@ -42,9 +38,7 @@ TTMainWindow::TTMainWindow()
 
 	set_titlebar(*headerbar);
 
-    std::cout << "Initializing!" << std::endl;
 	init_items();
-    std::cout << "Finished initializing!" << std::endl;
 	add(m_VBox);
 
 	m_VBox.pack_start(m_ScrolledWindow);
@@ -86,8 +80,6 @@ TTMainWindow::~TTMainWindow() {
 }
 
 void TTMainWindow::external_torrent(char argv[]) {
-	std::cout << argv << std::endl;
-
 	auto builder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_torrentfile.glade"));
 	Gtk::MessageDialog* dialog;
 	builder->get_widget("TorrentFromFile", dialog);
@@ -109,17 +101,13 @@ void TTMainWindow::external_torrent(char argv[]) {
 	switch(result) {
 		case Gtk::RESPONSE_YES:
 		{
-			std::cout << "Yes" << std::endl;
 			auto tvw = tvw_list[item_list->get_active_row_number()];
 			tvw->GetItem().torrents.push_back({argv, file_path->get_filename()});
 			tvw->GetHandler().AddTorrent(argv, file_path->get_filename());
 			break;
 		}
-		case Gtk::RESPONSE_NO:
-			std::cout << "No" << std::endl;
-			break;
+		case Gtk::RESPONSE_NO
 		default:
-			std::cout << "What" << std::endl;
 			break;
 	}
 	dialog->hide();
@@ -143,16 +131,13 @@ void TTMainWindow::init_items() {
 			}
 		}
 	}
-    std::cout << "Line 146" << std::endl;
 	Json::Value feed_root;
 
 	ok = ResourceManager::get_feed_save(feed_root);
-    std::cout << "Line 150" << std::endl;
 	if(ok) {
 	    for(const auto & i : feed_root["feeds"]) {
 	        add_feed(i.asString());
 	    }
-	    std::cout << "Line 155" << std::endl;
 	    for(const auto& i : feed_root["filters"]) {
             auto& filter =  m_Filters.emplace_back();
             filter.internal_id = filter_count++;
@@ -201,14 +186,10 @@ void TTMainWindow::on_button_add() {
 	int result = dialog->run();
 	switch(result) {
 		case(Gtk::RESPONSE_OK):
-			std::cout << "OK" << std::endl;
 			add_item(tv->get_text(), file_name->get_filename(), default_path->get_filename());
 			break;
 		case(Gtk::RESPONSE_CANCEL):
-			std::cout << "Cancel" << std::endl;
-			break;
 		default:
-			std::cout << "What" << std::endl;
 			break;
 	}
 	dialog->hide();
@@ -239,7 +220,6 @@ void TTMainWindow::on_button_settings() {
 bool TTMainWindow::on_tvwidget_double_click(GdkEventButton* ev) {
 	
 	if(ev->type == GDK_2BUTTON_PRESS) {
-		std::cout << "Double click!" << std::endl;	
 		auto selected = m_FlowBox.get_selected_children();
 		if(selected.empty()) return false;
 		auto window = new TTItemWindow(*tvw_list[selected[0]->get_index()]);
@@ -323,7 +303,6 @@ void TTMainWindow::check_feeds() {
 //                feed->parse_feed();
 //            }
             if(feed_control_window != nullptr) goto skip;
-            std::cout << "Searching!" << std::endl;
             for(auto& filter : m_Filters) {
                 if(filter.tvw.empty()) continue;
                 std::string filter_processed = "\\b" + filter.ver_pattern;
@@ -379,7 +358,6 @@ bool TTMainWindow::check_if_already_downloaded(const std::vector<std::string>& n
             return false;
         }
     }
-    std::cout << name[0] << ' ' << m[0] << std::endl;
     return true;
 }
 

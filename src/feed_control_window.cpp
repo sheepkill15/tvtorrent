@@ -4,7 +4,6 @@
 
 #include "feed_control_window.h"
 #include "resource_manager.h"
-#include <iostream>
 #include "main_window.h"
 #include "macros.h"
 
@@ -29,7 +28,6 @@ TTFeedControlWindow::TTFeedControlWindow(TTMainWindow* caller)
     for(auto& filter : caller->GetFilters()) {
             auto filter_list_item = Gtk::make_managed<Gtk::Entry>();
             filter_list_item->set_data("filter_id", reinterpret_cast<void *>(&filter.internal_id));
-            std::cout << filter.id << std::endl;
             filter_list_item->set_text(filter.id);
             m_Filters.push_back(filter_list_item);
             filter_list->append(*filter_list_item);
@@ -116,7 +114,6 @@ void TTFeedControlWindow::on_remove_filter() {
     }
 done:
     filter_list->remove(*selected);
-    std::cout << "Done" << std::endl;
 
     selected_filter = nullptr;
     download_name->set_text("");
@@ -144,14 +141,10 @@ void TTFeedControlWindow::on_add_feed() {
 
             feed_list->append(*feed_list_item);
             feed_list->show_all_children();
-            std::cout << "OK" << std::endl;
         }
             break;
         case Gtk::RESPONSE_CANCEL:
-            std::cout << "Cancel" << std::endl;
-            break;
         default:
-            std::cout << "What" << std::endl;
             break;
     }
 

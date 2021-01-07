@@ -3,25 +3,15 @@
 #include "gtkmm/button.h"
 #include "tv_widget.h"
 #include "item_window.h"
-#include "gtkmm/builder.h"
-#include "gtkmm/dialog.h"
-#include "gtkmm/entry.h"
-#include "gtkmm/enums.h"
-#include "gtkmm/messagedialog.h"
-#include "gtkmm/object.h"
-#include <cstdlib>
 #include <filesystem>
-#include <gtkmm/liststore.h>
 #include <gtkmm/cellrendererprogress.h>
-#include <gtkmm/headerbar.h>
 #include <gtkmm/filechooserbutton.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/toolbar.h>
 #include "macros.h"
 #include "formatter.h"
 #include "resource_manager.h"
-#include <iostream>
-#include <unistd.h>
+#include <shellapi.h>
 
 TTItemWindow::TTItemWindow(TVWidget& item) 
 	: m_Item(&item.GetItem()),
@@ -117,7 +107,6 @@ TTItemWindow::TTItemWindow(TVWidget& item)
 	m_TreeView.ON_BUTTON_PRESSED(&TTItemWindow::on_row_pressed);
 
 	m_Dispatcher.ON_DISPATCH(&TTItemWindow::update_torrent_views);
-	//first = new std::thread([this] { m_TorrentHandler.do_work(this); });
 	subscription = m_TorrentHandler.subscribe((const std::function<void()> &) [this] { TTItemWindow::notify(); });
 }
 
@@ -171,13 +160,9 @@ void TTItemWindow::remove_selected_rows(bool remove_files) {
 	if(!row) return;
 	unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
 	auto name = row->get_value(m_Columns.m_col_name);
-
-	std::cout << id << ": " << name << std::endl;
 	m_TorrentHandler.RemoveTorrent(name, remove_files);
 
 	if(remove_files) {
-		//auto path = m_Item->torrents[id].file_path;
-		//ResourceManager::delete_file_with_path(path, name);
 		ResourceManager::delete_file(name);
 	}
 
@@ -187,7 +172,6 @@ void TTItemWindow::remove_selected_rows(bool remove_files) {
 	for(int i = 1; i <= children.size(); i++) {
 		children[i-1][m_Columns.m_col_id] = i;
 	}
-	std::cout << "Deleted!" << std::endl;
 }
 
 TTItemWindow::~TTItemWindow() {
@@ -212,17 +196,18 @@ bool TTItemWindow::on_row_pressed(GdkEventButton *ev) {
 	if(ev->type == GDK_2BUTTON_PRESS) {
 		auto selection = m_TreeView.get_selection();
 		auto row = selection->get_selected();
-		auto state = m_TorrentHandler.m_Handles[row->get_value(m_Columns.m_col_name)].status().state;
-		//if(state != lt::torrent_status::finished && state != lt::torrent_status::seeding) return false;
 		unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
 		auto path = m_Item->torrents[id].file_path;
-		//system(Glib::ustring::format("xdg-open ", "\"", path, "/", row->get_value(m_Columns.m_col_name), "\"").c_str());
+#if defined(WIN32) || defined(WIN64)
+    ShellExecuteA(nullptr, "open", path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+#else
 		GError *error = nullptr;
 		if(!g_app_info_launch_default_for_uri(Glib::ustring::format("file:///", path).c_str()
 		, nullptr, &error)) {
 			g_warning("Failed to open uri: %s", error->message);
 			return false;
 		}
+#endif
 		return true;
 	}
 	return true;
@@ -234,7 +219,7 @@ void TTItemWindow::on_start_torrent() {
 	auto row = selection->get_selected();
 	if(!row) return;
 	auto handle = m_TorrentHandler.m_Handles[row->get_value(m_Columns.m_col_name)];
-	handle.auto_managed(true);
+    handle.set_flags(lt::torrent_flags::auto_managed);
 	handle.resume();
 }
 
@@ -244,7 +229,7 @@ void TTItemWindow::on_pause_torrent() {
 	auto row = selection->get_selected();
 	if(!row) return;
 	auto handle = m_TorrentHandler.m_Handles[row->get_value(m_Columns.m_col_name)];
-	handle.auto_managed(false);
+	handle.unset_flags(lt::torrent_flags::auto_managed);
 	handle.pause();
 }
 
@@ -254,7 +239,6 @@ void TTItemWindow::on_torrentadddialog_response(int response_id) {
 
 	switch(response_id) {
 		case Gtk::RESPONSE_OK:
-			std::cout << "OK" << std::endl;
 			Gtk::Entry* magnet;
 			builder->get_widget<Gtk::Entry>("MagnetLink", magnet);
 			Gtk::FileChooserButton* file;
@@ -264,10 +248,7 @@ void TTItemWindow::on_torrentadddialog_response(int response_id) {
 
 			break;
 		case Gtk::RESPONSE_CANCEL:
-			std :: cout << "Cancel" << std::endl;
-			break;
 		default:
-			std :: cout << "What" << std::endl;
 			break;
 	}
 }
@@ -277,16 +258,12 @@ void TTItemWindow::on_torrentremovedialog_response(int response_id) {
 
 	switch(response_id) {
 		case Gtk::RESPONSE_YES:
-			std::cout << "Yes" << std::endl;
 			Gtk::CheckButton* button;
 			remove_builder->get_widget("RemoveFile", button);
 			remove_selected_rows(button->get_active());
 			break;
 		case Gtk::RESPONSE_NO:
-			std::cout << "No" << std::endl;
-			break;
 		default:
-			std::cout << "What" << std::endl;
 			break;
 	}
 }

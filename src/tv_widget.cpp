@@ -1,6 +1,5 @@
 #include "tv_widget.h"
 #include "gtkmm/textbuffer.h"
-#include <iostream>
 #include "macros.h"
 #include "formatter.h"
 #include "resource_manager.h"

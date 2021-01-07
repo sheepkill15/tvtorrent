@@ -1,6 +1,5 @@
 #include "feed.h"
 #include "resource_manager.h"
-#include <iostream>
 #include <utility>
 
 namespace {
@@ -9,7 +8,6 @@ namespace {
 size_t Feed::writer(char *data, size_t size, size_t nmemb, std::string *buffer){
     size_t result = 0;
     if(buffer != nullptr) {
-        std::cout << size << std::endl;
         buffer -> append(data, size * nmemb);
         result = size * nmemb;
     }
@@ -57,11 +55,9 @@ void Feed::parse_feed(bool first) {
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer ); /* Data Pointer &buffer stores downloaded web content */
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
 	} else {
-		std::cerr << "Curl couldn't be configured! " << std::endl;
         return;
 	}
 	curl_easy_perform(curl);
-    std::cout << buffer << std::endl;
 	curl_easy_cleanup(curl);
     doc.clear();
 	doc.parse<0>(buffer.data());
@@ -76,9 +72,9 @@ void Feed::parse_feed(bool first) {
         channel_data.title = title->value();
         channel_data.desc = desc->value();
         channel_data.link = link->value();
+        return;
     }
     m_Items.clear();
-    std::cout << "Line 79 - feed!" << std::endl;
     for(auto child = channel->first_node("item"); child != nullptr; child = child->next_sibling("item")) {
         parse_item(child);
     }
@@ -91,7 +87,6 @@ void Feed::parse_feed(bool first) {
 }
 
 void Feed::parse_item (rapidxml::xml_node<>* child) {
-    std::cout << "Parsed!" <<std::endl;
     auto title = child->first_node("title");
     if(!title) return;
     std::string title_value = title->value();

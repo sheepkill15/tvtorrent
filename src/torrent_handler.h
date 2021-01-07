@@ -16,7 +16,6 @@ class TorrentHandler {
 
 		lt::torrent_handle AddTorrent(const std::string& url, const std::string& file_path);
 		void RemoveTorrent(const std::string& name, bool);
-		//std::vector<lt::torrent_status const * > FetchTorrentUpdates();
 		void do_work();
 		void signal_stop();
         void update_limits();
