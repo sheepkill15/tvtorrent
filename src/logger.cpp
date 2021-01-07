@@ -39,7 +39,6 @@ void Logger::init() {
     }
 
     coutbuf = std::cout.rdbuf();
-    //logfile << coutbuf;
     std::cout.rdbuf(logfile.rdbuf());
 
     info("Initialized logging!");
