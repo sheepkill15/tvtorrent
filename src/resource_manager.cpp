@@ -154,8 +154,9 @@ Glib::ustring ResourceManager::get_resource_path(const Glib::ustring &name) {
 
 void ResourceManager::delete_file(const std::string &name) {
     try {
-        if(std::filesystem::remove(SAVE_DIRECTORY + DELIM + "torrents" + DELIM + name)) {
-	        std::cout << "Save deleted!" << std::endl;
+        auto path = SAVE_DIRECTORY + DELIM + "torrents" + DELIM + name;
+        if(std::filesystem::remove(path)) {
+	        std::cout << "Save deleted! " << path << std::endl;
 	    } else std::cout << "Save not deleted!" << std::endl;
     } catch(const std::filesystem::filesystem_error& err) {
 			std::cout << "Filesystem error: " << err.what() << std::endl;
