@@ -14,6 +14,7 @@
 #include <thread>
 #include <chrono>
 #include <filesystem>
+#include <iostream>
 
 namespace {
 
@@ -63,18 +64,18 @@ void TorrentHandler::AddTorrent(const std::string &url, const std::string& file_
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
     size_t curr_count = thread_count;
-	m_Threads.insert(std::make_pair(curr_count, std::thread([this, url, file_path] { TorrentHandler::setup_torrent(url, file_path); })));
+	m_Threads.insert(std::make_pair(curr_count, std::thread([this, url, file_path, curr_count] { TorrentHandler::setup_torrent(url, file_path, curr_count);})));
 	thread_count++;
 }
 
 void TorrentHandler::RemoveTorrent(const std::string& name, bool remove_files) {
 	std::lock_guard<std::mutex> lock(m_Mutex);
-    m_Handles[name].pause();
     auto handle = m_Handles[name];
     m_Handles.erase(m_Handles.find(name));
-    handle.flush_cache();
-    if(remove_files)
+    if(remove_files) {
+        std::cout << "Supposed to remove torrent! " << handle.status().name << std::endl;
 	    _ses.remove_torrent(handle, lt::session_handle::delete_files);
+    }
     else _ses.remove_torrent(handle);
 }
 
@@ -114,6 +115,9 @@ void TorrentHandler::do_work() {
 				auto handle = al->handle;
 				if(!handle.is_valid()) continue;
 				handle.save_resume_data(lt::torrent_handle::save_info_dict);
+                for(auto& cb : m_CompletedCallbacks) {
+                    cb(handle.status());
+                }
 			}
 			if(auto al = lt::alert_cast<lt::torrent_error_alert>(a)) {
                 if(!al->handle.is_valid()) continue;
@@ -170,7 +174,7 @@ void TorrentHandler::unsubscribe_from_added(int id) {
     m_AddedCallbacks.erase(id);
 }
 
-void TorrentHandler::setup_torrent(const std::string &url, const std::string &file_path) {
+void TorrentHandler::setup_torrent(const std::string &url, const std::string &file_path, size_t curr_count) {
     std::lock_guard<std::mutex> lock(m_Mutex);
 
     lt::add_torrent_params params;
@@ -226,4 +230,10 @@ void TorrentHandler::setup_torrent(const std::string &url, const std::string &fi
     params.upload_limit = SettingsManager::get_settings().ul_limit * Formatter::MEGABYTE;
     params.save_path = file_path;
     _ses.async_add_torrent(std::move(params));
+    m_Threads[curr_count].detach();
+    m_Threads.erase(curr_count);
+}
+
+void TorrentHandler::subscribe_for_completed(const std::function<void(const lt::torrent_status &)>& callback) {
+    m_CompletedCallbacks.push_back(callback);
 }

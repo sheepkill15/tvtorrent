@@ -21,6 +21,7 @@ class TorrentHandler {
         void update_limits();
 		int subscribe(const std::function<void()>& callback);
 		int subscribe_for_added(const std::function<void()>& callback);
+		void subscribe_for_completed(const std::function<void(const lt::torrent_status&)>& callback);
 		void unsubscribe(int id);
 		void unsubscribe_from_added(int id);
 
@@ -36,11 +37,12 @@ class TorrentHandler {
 
 		std::unordered_map<int, std::function<void()>> m_Callbacks;
 		std::unordered_map<int, std::function<void()>> m_AddedCallbacks;
+		std::vector<std::function<void(const lt::torrent_status&)>> m_CompletedCallbacks;
 		std::unordered_map<int, std::thread> m_Threads;
 
 		mutable std::mutex m_Mutex;
 
-		void setup_torrent(const std::string& url, const std::string& file_path);
+		void setup_torrent(const std::string& url, const std::string& file_path, size_t curr_count);
 };
 
 #endif
