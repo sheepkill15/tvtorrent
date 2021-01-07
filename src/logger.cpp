@@ -37,9 +37,10 @@ void Logger::init() {
         std::cerr << "Log file couldn't be instantiated!" << std::endl;
         return;
     }
-
     coutbuf = std::cout.rdbuf();
     std::cout.rdbuf(logfile.rdbuf());
+    std::cerr.rdbuf(logfile.rdbuf());
+    std::clog.rdbuf(logfile.rdbuf());
 
     info("Initialized logging!");
 }
