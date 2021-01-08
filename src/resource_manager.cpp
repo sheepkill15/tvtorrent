@@ -97,7 +97,7 @@ void ResourceManager::create_feed_save(const std::vector<Glib::ustring> &feeds, 
         _filter["tvw"] = std::string(filter.tvw);
         int j = 0;
         for(auto& feed : filter.feeds) {
-            _filter["feeds"][j++] = std::string(feed);
+            _filter["feeds"][j++] = feed;
         }
         _filters[i++] = _filter;
     }

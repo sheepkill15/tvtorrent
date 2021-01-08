@@ -6,6 +6,8 @@
 #include "resource_manager.h"
 #include "main_window.h"
 #include "macros.h"
+#include "hash.h"
+#include "feed.h"
 
 TTFeedControlWindow::TTFeedControlWindow(TTMainWindow* caller)
 : parent(caller)
@@ -42,7 +44,8 @@ TTFeedControlWindow::TTFeedControlWindow(TTMainWindow* caller)
     builder->get_widget("FeedList", feed_list);
 
     for(auto feed : caller->feed_list) {
-        auto feed_list_item = Gtk::make_managed<Gtk::CheckButton>(feed->channel_data.title);
+        auto feed_list_item = Gtk::make_managed<Gtk::CheckButton>(feed->channel_data.title);;
+        feed_list_item->set_data("feed_id", reinterpret_cast<void *>(&(feed->channel_data.hash)));
         feed_list_item->ON_CLICK_BIND(&TTFeedControlWindow::on_feed_list_item_click, Gtk::CheckButton*), feed_list_item));
         m_Feeds.push_back(feed_list_item);
         feed_list->append(*feed_list_item);
@@ -147,6 +150,7 @@ void TTFeedControlWindow::on_add_feed() {
             parent->add_feed(feedurl->get_text());
 
             auto feed_list_item = Gtk::make_managed<Gtk::CheckButton>(parent->feed_list.back()->channel_data.title);
+            feed_list_item->set_data("feed_id", reinterpret_cast<void *>(&(parent->feed_list.back()->channel_data.hash)));
             m_Feeds.push_back(feed_list_item);
             feed_list_item->ON_CLICK_BIND(&TTFeedControlWindow::on_feed_list_item_click, Gtk::CheckButton*), feed_list_item));
 
@@ -182,9 +186,9 @@ void TTFeedControlWindow::on_filter_activate(Gtk::ListBoxRow* row) {
     tvw_chooser->set_active_text(selected_filter->tvw);
     for(auto feed : m_Feeds) {
         bool found = false;
-        auto label = std::move(feed->get_label());
+        size_t* id = static_cast<size_t*>(feed->get_data("feed_id"));
         for(auto& item : selected_filter->feeds) {
-            if(item == label) {
+            if(item == *id) {
                 found = true;
                 break;
             }
@@ -217,17 +221,17 @@ void TTFeedControlWindow::on_tvw_changed() {
 void TTFeedControlWindow::on_feed_list_item_click(Gtk::CheckButton* btn) {
     if(selected_filter == nullptr) return;
     if(btn->get_active()) {
-        auto text = btn->get_label();
+        size_t* id = static_cast<size_t*>(btn->get_data("feed_id"));
         for(auto& feed : selected_filter->feeds) {
-            if(feed == text) return;
+            if(feed == *id) return;
         }
-        selected_filter->feeds.push_back(text);
+        selected_filter->feeds.push_back(*id);
     }
     else {
-        auto text = btn->get_label();
+        size_t* id = static_cast<size_t*>(btn->get_data("feed_id"));
         int i = 0;
         for(auto& feed : selected_filter->feeds) {
-            if(feed == text) {
+            if(feed == *id) {
                 selected_filter->feeds.erase(selected_filter->feeds.begin() + i);
                 break;
             }
@@ -269,7 +273,7 @@ void TTFeedControlWindow::update_results() {
     split(selected_filter->name, name_split, ' ');
     for(const auto& feed : selected_filter->feeds) {
         for(const auto& item : parent->feed_list) {
-            if(item->channel_data.title == feed) {
+            if(item->channel_data.hash == feed) {
                 for(const auto& feed_item : item->GetItems()) {
                     bool ok = true;
                     for(auto& s : name_split) {

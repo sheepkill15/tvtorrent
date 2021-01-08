@@ -1,6 +1,9 @@
 #include "feed.h"
 #include "resource_manager.h"
 #include <utility>
+#include <iostream>
+#include "hash.h"
+
 
 namespace {
 
@@ -16,7 +19,8 @@ size_t Feed::writer(char *data, size_t size, size_t nmemb, std::string *buffer){
 Feed::Feed(std::string  rss_url)
     :RSS_URL(std::move(rss_url))
 {
-    parse_feed(true);
+    channel_data.hash = Unique::from_string(RSS_URL);
+    //parse_feed(true);
     own = std::thread([this] {periodic();});
 }
 
@@ -44,7 +48,7 @@ void Feed::periodic() {
     }
 }
 
-void Feed::parse_feed(bool first) {
+void Feed::parse_feed() {
     buffer.clear();
     curl = curl_easy_init();
     if(curl) {
@@ -65,15 +69,15 @@ void Feed::parse_feed(bool first) {
     if(std::string(root->name()) != "rss") return;
     auto channel = root->first_node("channel");
 
-    if(first) {
-        auto title = channel->first_node("title");
-        auto desc = channel->first_node("description");
-        auto link = channel->first_node("link");
-        channel_data.title = title->value();
-        channel_data.desc = desc->value();
-        channel_data.link = link->value();
-        return;
+    auto title = channel->first_node("title");
+    auto desc = channel->first_node("description");
+    channel_data.title = title->value();
+    auto pos = RSS_URL.find("rss");
+    if(pos != std::string::npos) {
+        channel_data.title += " (" + RSS_URL.substr(pos + 4) + ")";
     }
+
+    channel_data.desc = desc->value();
     m_Items.clear();
     for(auto child = channel->first_node("item"); child != nullptr; child = child->next_sibling("item")) {
         parse_item(child);

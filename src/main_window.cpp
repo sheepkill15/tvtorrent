@@ -10,6 +10,9 @@
 #include "feed_control_window.h"
 #include "settings_manager.h"
 #include "logger.h"
+#include "feed.h"
+#include "item_window.h"
+#include "tv_widget.h"
 
 TTMainWindow::TTMainWindow(std::function<void(const std::string&)> notification_cb)
 	: tvw_list(),
@@ -159,7 +162,8 @@ skip:
             filter.tvw = i["tvw"].asString();
             if(i.isMember("feeds") && i["feeds"]) {
                 for(const auto& j : i["feeds"]) {
-                    filter.feeds.emplace_back(j.asString());
+                    if(j.is<size_t>())
+                        filter.feeds.emplace_back(j.asLargestUInt());
                 }
             }
 	    }
@@ -264,12 +268,6 @@ void TTMainWindow::on_feedcontrol_window_hide() {
 
 void TTMainWindow::add_feed(const Glib::ustring &url) {
     feed_list.push_back(new Feed(url));
-    auto feed = feed_list.back();
-    for(int i = 0; i < feed_list.size() - 1; i++) {
-        if(feed_list[i]->channel_data.title == feed->channel_data.title) {
-            feed->channel_data.title += " (1)";
-        }
-    }
 }
 
 Feed::Filter& TTMainWindow::add_filter() {
@@ -306,17 +304,11 @@ namespace {
         return strs.size();
     }
 }
-
-
-
 void TTMainWindow::check_feeds() {
     should_work = true;
     while(should_work) {
         {
             std::lock_guard<std::mutex> lock(m_Mutex);
-//            for(auto& feed : feed_list) {
-//                feed->parse_feed();
-//            }
             if(feed_control_window != nullptr) goto skip;
             for(auto& filter : m_Filters) {
                 if(filter.tvw.empty() || filter.name.empty()) continue;

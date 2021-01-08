@@ -9,7 +9,6 @@
 #include <thread>
 #include <vector>
 #include <glibmm/ustring.h>
-
 class Feed {
 public:
     struct Item {
@@ -23,7 +22,7 @@ public:
         Glib::ustring name;
         Glib::ustring ver_pattern;
         Glib::ustring tvw;
-        std::vector<Glib::ustring> feeds = {};
+        std::vector<size_t> feeds = {};
 
         int internal_id;
 
@@ -34,7 +33,7 @@ public:
 
     explicit Feed(std::string );
     ~Feed();
-    void parse_feed(bool = false);
+    void parse_feed();
 
     static size_t writer(char *data, size_t size, size_t nmemb, std::string *buffer);
 
@@ -46,7 +45,7 @@ public:
     struct {
         std::string title;
         std::string desc;
-        std::string link;
+        size_t hash;
     } channel_data;
 
 private:
@@ -54,6 +53,7 @@ private:
     void parse_item(rapidxml::xml_node<char>*);
 
     const std::string RSS_URL;
+
     std::string buffer;
 
     rapidxml::xml_document<> doc;
