@@ -11,6 +11,8 @@ public:
     struct Settings {
         float dl_limit;
         float ul_limit;
+        bool should_ask_exit;
+        bool close_to_tray;
     };
 
     SettingsManager() = delete;

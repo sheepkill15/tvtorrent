@@ -1,9 +1,11 @@
 #include "giomm/application.h"
+#include <gtkmm/checkbutton.h>
 #include "main_window.h"
 #include "resource_manager.h"
 #include "settings_manager.h"
 #include "logger.h"
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include "macros.h"
 
 #if defined(WIN32) || defined(WIN64)
 #include <shellapi.h>
@@ -168,6 +170,63 @@ void check_for_ipc_message() {
 }
 
 
+void OpenWindow() {
+        main_window->show();
+        //app->release();
+}
+
+void HideWindow() {
+    app->release();
+    main_window->hide();
+}
+bool held = false;
+void ask_for_confirmation() {
+    if(!SettingsManager::get_settings().should_ask_exit) {
+        if(SettingsManager::get_settings().close_to_tray) {
+            if(!held) {
+                app->hold();
+                held = true;
+            }
+        }
+        else {
+            HideWindow();
+        }
+        return;
+    }
+
+    auto builder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_confirm.glade"));
+    Gtk::Dialog* dialog;
+    builder->get_widget("ConfirmationDialog", dialog);
+
+    Gtk::CheckButton* ask_again;
+    builder->get_widget("AskAgain", ask_again);
+
+    int result = dialog->run();
+
+    switch(result) {
+        case Gtk::RESPONSE_YES:
+        {
+            SettingsManager::get_settings().should_ask_exit = !ask_again->get_active();
+            SettingsManager::get_settings().close_to_tray = true;
+            if(!held) {
+                app->hold();
+                held = true;
+            }
+            break;
+        }
+        case Gtk::RESPONSE_NO:
+        default:
+            SettingsManager::get_settings().should_ask_exit = !ask_again->get_active();
+            SettingsManager::get_settings().close_to_tray = false;
+            HideWindow();
+            break;
+    }
+
+    dialog->hide();
+    delete dialog;
+
+}
+
 } // anonymous namespace
 
 int main(int argc, char *argv[])
@@ -214,8 +273,8 @@ int main(int argc, char *argv[])
 		main_window->external_torrent(argv[1]);
 	}
 	app->signal_command_line().connect(sigc::bind(sigc::ptr_fun(&on_command_line), app), false);
+	main_window->signal_hide().connect(sigc::ptr_fun(&ask_for_confirmation));
 
-    app->hold();
 	int result = app->run(*main_window);
     delete main_window;
 #if defined(WIN32) || defined(WIN64)
@@ -226,16 +285,6 @@ int main(int argc, char *argv[])
     message_queue::remove("mq");
 
 	return result;
-}
-
-void OpenWindow() {
-    main_window->show();
-    //app->release();
-}
-
-void HideWindow() {
-    app->release();
-    main_window->hide();
 }
 
 #if defined(WIN32) || defined(WIN64)

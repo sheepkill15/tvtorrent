@@ -10,6 +10,8 @@ void SettingsManager::init() {
 
     m_Settings.ul_limit = -1;
     m_Settings.dl_limit = -1;
+    m_Settings.close_to_tray = false;
+    m_Settings.should_ask_exit = true;
 
     Json::Value root;
     Json::CharReaderBuilder builder;
@@ -25,6 +27,9 @@ void SettingsManager::init() {
     else {
         m_Settings.dl_limit = root["dl_limit"].asFloat();
         m_Settings.ul_limit = root["ul_limit"].asFloat();
+        m_Settings.close_to_tray = root["close_to_tray"].asBool();
+        if(root.isMember("should_ask_exit"))
+            m_Settings.should_ask_exit = root["should_ask_exit"].asBool();
     }
     settingsfile.close();
 
@@ -34,6 +39,8 @@ void SettingsManager::save() {
     Json::Value value;
     value["dl_limit"] = m_Settings.dl_limit;
     value["ul_limit"] = m_Settings.ul_limit;
+    value["close_to_tray"] = m_Settings.close_to_tray;
+    value["should_ask_exit"] = m_Settings.should_ask_exit;
 
     Json::StreamWriterBuilder builder;
     builder["indentation"] = "\t";
