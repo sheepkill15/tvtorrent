@@ -7,11 +7,11 @@ BEGIN
     BLOCK "080904E4"
     BEGIN
       VALUE "CompanyName", "SandDunes"
-      VALUE "FileDescription", "TVTorrent - a bittorrent client"
+      VALUE "FileDescription", "TVTorrent - libTorrent client"
       VALUE "FileVersion", "1.2"
-      VALUE "InternalName", "TVTorrent - a simple and light bittorrent client"
+      VALUE "InternalName", "TVTorrent - a simple and light libTorrent client"
       VALUE "LegalCopyright", "Simon Aron"
-      VALUE "OriginalFilename", "TVTorrent - a simple and light bittorrent client"
+      VALUE "OriginalFilename", "TVTorrent"
       VALUE "ProductName", "TVTorrent"
       VALUE "ProductVersion", "1.2"
     END

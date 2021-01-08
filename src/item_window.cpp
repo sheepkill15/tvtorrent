@@ -24,7 +24,7 @@ TTItemWindow::TTItemWindow(TVWidget& item)
 {
 	set_title(m_Item->name);
 	set_border_width(10);
-	set_default_size(640, 480);
+	set_default_size(1280, 720);
 	
 	auto m_refBuilder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_headerbar.glade"));
 
