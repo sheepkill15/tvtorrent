@@ -26,6 +26,8 @@ public:
 	~TTMainWindow() override;
 
 	void external_torrent(char argv[]);
+	void external_torrent_empty();
+	void notify(const std::string&);
     void add_feed(const Glib::ustring& url);
     void update_limits();
     Feed::Filter& add_filter();
@@ -74,6 +76,9 @@ protected:
     std::function<void(const std::string&)> notify_cb;
 
     int filter_count = 0;
+
+    Glib::Dispatcher m_Dispatcher;
+    std::string pending_uri;
 };
 
 #endif

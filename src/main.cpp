@@ -3,13 +3,12 @@
 #include "resource_manager.h"
 #include "settings_manager.h"
 #include "logger.h"
+#include <boost/interprocess/ipc/message_queue.hpp>
 
 #if defined(WIN32) || defined(WIN64)
 #include <shellapi.h>
 #include <windows.h>
 #include <sphelper.h>
-#include <commctrl.h>
-#include <gdk/gdkwin32.h>
 
 #define APPWM_ICONNOTIFY (WM_APP + 1)
 #define APP_ICON_OPEN (WM_APP + 2)
@@ -22,12 +21,12 @@ namespace
 {
     Glib::RefPtr<Gtk::Application> app;
     TTMainWindow* main_window;
-    HWND hwnd;
 
 #if defined(WIN32) || defined(WIN64)
     NOTIFYICONDATA nid = {};
     HMENU hMenu;
     LPCTSTR lpszClass = "__hidden__";
+    HWND hwnd;
 
     void ShowContextMenu(HWND hWnd)
     {
@@ -52,26 +51,6 @@ namespace
     }
     
     void ShowNotification(const std::string& text) {
-//        HINSTANCE g_hinst = GetModuleHandle(nullptr);
-//        HWND hwndToolTips = CreateWindow(TOOLTIPS_CLASS, nullptr,
-//                             WS_POPUP | TTS_NOPREFIX | TTS_BALLOON,
-//                             0, 0, 0, 0, nullptr, nullptr, g_hinst, nullptr);
-//        if(hwndToolTips) {
-//            TOOLINFO ti;
-//            ti.cbSize = sizeof(ti);
-//            ti.uFlags = TTF_TRANSPARENT | TTF_CENTERTIP;
-//            ti.hwnd = hwnd;
-//            ti.uId = 0;
-//            ti.hinst = nullptr;
-//            ti.lpszText = LPSTR_TEXTCALLBACK;
-//            GetClientRect(hwnd, &ti.rect);
-//            SendMessage(hwndToolTips, TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(&ti));
-//        }
-//        NOTIFYICONDATA IconData = {0};
-//
-//        IconData.cbSize = sizeof(IconData);
-//        IconData.hWnd   = hwnd;
-//        IconData.uFlags = NIF_INFO;
 
         HRESULT hr = StringCchCopy(nid.szInfo,
                                    ARRAYSIZE(nid.szInfo),
@@ -160,14 +139,68 @@ int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine>& command_lin
 #endif
   return EXIT_SUCCESS;
 }
+bool should_work = true;
+using namespace boost::interprocess;
+
+void check_for_ipc_message() {
+
+    message_queue mq(open_or_create, "mq", 20, sizeof(char) * 500);
+
+    while(should_work) {
+        try {
+            size_t recvd_size;
+            unsigned int priority;
+            std::string buffer;
+            buffer.resize(550);
+            if (mq.get_num_msg() > 0) {
+                mq.receive(buffer.data(), sizeof(char) * 500, recvd_size, priority);
+                buffer.resize(recvd_size / sizeof(char));
+                std::cout << recvd_size << ": " << buffer << std::endl;
+                main_window->notify(buffer);
+            }
+        } catch(interprocess_exception& er) {
+            std::cout << er.what() << std::endl;
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+}
+
 
 } // anonymous namespace
 
 int main(int argc, char *argv[])
 {
+
+    try {
+        HANDLE h = CreateMutex(nullptr, FALSE, "tvtorrent");
+        bool already_running = h != nullptr && (GetLastError() == ERROR_ALREADY_EXISTS);
+        std::cout << "Checking lol" << std::endl;
+        if(already_running) {
+            if(argc == 2) {
+                message_queue messageQueue(open_or_create, "mq", 20, sizeof(char) * 500);
+                std::string teszt(argv[1]);
+                std::cout << "Preparing to send " << teszt.size() << ": " << teszt << std::endl;
+                messageQueue.send(teszt.data(), sizeof(char) * teszt.size(), 0);
+                std::cout << "Sent" << std::endl;
+                return 0;
+            }
+            return 0;
+        }
+
+    } catch(interprocess_exception& e) {
+        std::cout << e.get_error_code() << ": "  << e.what() << std::endl;
+        return -1;
+    }
+    Logger::init();
+
+    std::thread mine = std::thread([] { check_for_ipc_message(); } );
+    //boost::thread mine(check_for_ipc_message);
+
+    ResourceManager::init();
+
 	app = Gtk::Application::create("com.sheepkill15.tvtorrent", Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
-	Logger::init();
-	ResourceManager::init();
 	SettingsManager::init();
 
 	Logger::info("Application initialized");
@@ -180,14 +213,18 @@ int main(int argc, char *argv[])
 	    Logger::info(std::string("Received external uri: ") + argv[1]);
 		main_window->external_torrent(argv[1]);
 	}
-
 	app->signal_command_line().connect(sigc::bind(sigc::ptr_fun(&on_command_line), app), false);
+
     app->hold();
 	int result = app->run(*main_window);
     delete main_window;
 #if defined(WIN32) || defined(WIN64)
 	Shell_NotifyIcon(NIM_DELETE, &nid);
 #endif
+    should_work = false;
+    mine.detach();
+    message_queue::remove("mq");
+
 	return result;
 }
 

@@ -12,6 +12,7 @@
 #include "macros.h"
 #include "formatter.h"
 #include "resource_manager.h"
+#include "logger.h"
 #include <shellapi.h>
 
 TTItemWindow::TTItemWindow(TVWidget& item) 
@@ -100,11 +101,16 @@ TTItemWindow::TTItemWindow(TVWidget& item)
 		column->set_reorderable();
 		column->set_resizable();
 	}
+
+	Logger::info("Set up item window children");
+
 	show_all_children();
 
 	for(auto& pair : m_TorrentHandler.m_Handles) {
 		add_torrent_row();
 	}
+
+	Logger::info("Added rows");
 
 	m_TreeView.ON_BUTTON_PRESSED(&TTItemWindow::on_row_pressed);
 
@@ -113,6 +119,8 @@ TTItemWindow::TTItemWindow(TVWidget& item)
 
 	subscription_for_added = m_TorrentHandler.subscribe_for_added((const std::function<void()>&) [this] {TTItemWindow::notify_added(); });
 	subscription = m_TorrentHandler.subscribe((const std::function<void()> &) [this] { TTItemWindow::notify(); });
+
+	Logger::info("Subscriptions and dispatchers initialized");
 }
 
 void TTItemWindow::notify() {
@@ -156,6 +164,7 @@ void TTItemWindow::add_torrent_row() {
     lt::torrent_status status;
     bool found;
     for(auto& hl : m_TorrentHandler.m_Handles) {
+        if(!hl.second.is_valid()) continue;
         auto stat = hl.second.status();
         if(names.find(stat.name) == names.end()) {
             status = stat;

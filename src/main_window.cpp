@@ -10,13 +10,11 @@
 #include "feed_control_window.h"
 #include "settings_manager.h"
 #include "logger.h"
-#include "feed.h"
-#include "item_window.h"
-#include "tv_widget.h"
 
 TTMainWindow::TTMainWindow(std::function<void(const std::string&)> notification_cb)
 	: tvw_list(),
-	notify_cb(std::move(notification_cb))
+	notify_cb(std::move(notification_cb)),
+	m_Dispatcher()
 {
 	set_title("TVTorrent");
 	set_border_width(10);
@@ -55,6 +53,7 @@ TTMainWindow::TTMainWindow(std::function<void(const std::string&)> notification_
 	m_FlowBox.ON_BUTTON_PRESSED(&TTMainWindow::on_tvwidget_double_click);
 
 	show_all_children();
+	m_Dispatcher.ON_DISPATCH(&TTMainWindow::external_torrent_empty);
 
     check = std::thread([this] {check_feeds();});
 }
@@ -238,7 +237,14 @@ bool TTMainWindow::on_tvwidget_double_click(GdkEventButton* ev) {
 	if(ev->type == GDK_2BUTTON_PRESS) {
 		auto selected = m_FlowBox.get_selected_children();
 		if(selected.empty()) return false;
-		auto window = new TTItemWindow(*tvw_list[selected[0]->get_index()]);
+		auto sel = selected[0];
+		if(!sel) return false;
+		int index = sel->get_index();
+		if(index < 0) return false;
+		TVWidget* item = tvw_list[index];
+		Logger::info("Creating item window");
+		auto window = new TTItemWindow(*item);
+		Logger::info("Created!");
 		window->ON_HIDE_BIND(&TTMainWindow::on_item_window_hide, TTItemWindow*), window));
 		window->show();
 		//get_application()->add_window(*window);
@@ -393,5 +399,14 @@ void TTMainWindow::refresh_check() {
 
 void TTMainWindow::on_torrent_complete(const lt::torrent_status& stat) {
     notify_cb(stat.name + " finished downloading!");
+}
+
+void TTMainWindow::external_torrent_empty() {
+    external_torrent(pending_uri.data());
+}
+
+void TTMainWindow::notify(const std::string & uri) {
+    pending_uri = uri;
+    m_Dispatcher.emit();
 }
 
