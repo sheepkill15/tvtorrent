@@ -31,8 +31,10 @@ namespace {
 void Logger::init() {
     LOG_DIRECTORY = std::string(getenv("APPDATA")) + "\\TVTorrent\\logs";
     create_if_doesnt_exist(LOG_DIRECTORY);
-
-    logfile = std::ofstream(LOG_DIRECTORY + DELIM + "latest.log", std::ios::out | std::ios::trunc);
+    std::stringstream ss;
+    auto now = clk::to_time_t(clk::now());
+    ss << std::put_time(std::localtime(&now), "%Y-%m-%d_%H-%M-%S") << ".log";
+    logfile = std::ofstream(LOG_DIRECTORY + DELIM + ss.str(), std::ios::out | std::ios::trunc);
     if(logfile.fail()) {
         std::cerr << "Log file couldn't be instantiated!" << std::endl;
         return;
@@ -92,4 +94,14 @@ void Logger::cleanup() {
 
     info("Cleanup complete");
     logfile.close();
+}
+
+Logger::watcher::watcher(const std::string &text)
+    :m_Text(text)
+{
+    Logger::info("Watcher start: " + text);
+}
+
+Logger::watcher::~watcher() {
+    Logger::info("Watcher end: " + m_Text);
 }

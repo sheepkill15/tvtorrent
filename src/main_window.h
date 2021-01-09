@@ -30,7 +30,7 @@ public:
 	void notify(const std::string&);
     void add_feed(const Glib::ustring& url);
     void update_limits();
-    Feed::Filter& add_filter();
+    Feed::Filter* add_filter();
 
 
     inline std::vector<Feed::Filter>& GetFilters() { return m_Filters; }
@@ -39,6 +39,10 @@ public:
     std::vector<TVWidget*> tvw_list;
     std::vector<Feed*> feed_list;
     inline static std::vector<std::string> m_Downloaded;
+    std::vector<Feed::Filter> m_Filters;
+
+    void RemoveFeed(size_t i);
+
 protected:
     //void on_button_download();
 	void on_button_add();
@@ -71,7 +75,6 @@ protected:
 
     TTFeedControlWindow* feed_control_window = nullptr;
     TTSettingsWindow* settings_window = nullptr;
-    std::vector<Feed::Filter> m_Filters;
 
     std::function<void(const std::string&)> notify_cb;
 

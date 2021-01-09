@@ -13,6 +13,15 @@ public:
     Logger() = delete;
     ~Logger() = default;
 
+    class watcher {
+    public:
+        explicit watcher(const std::string& text);
+        ~watcher();
+
+    private:
+        std::string m_Text;
+    };
+
     static void init();
     static void cleanup();
 

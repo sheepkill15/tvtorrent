@@ -27,7 +27,7 @@ private:
     void on_remove_feed();
     void on_filter_activate(Gtk::ListBoxRow*);
 
-    bool on_filter_pressed(GdkEventButton* ev, Gtk::ListBoxRow* row);
+    bool on_filter_pressed(GdkEventButton* ev, int index);
 
     void on_dl_changed();
     void on_vp_changed();
@@ -52,7 +52,8 @@ private:
     void update_results();
 
     std::vector<Gtk::CheckButton*> m_Feeds;
-    std::vector<Gtk::Entry*> m_Filters;
+
+    void UpdateFeeds(size_t);
 };
 
 

@@ -34,8 +34,10 @@ void TVWidget::init(const Glib::ustring &itemName, const Glib::ustring &imgPath,
 	builder->get_widget("FileName", FileName);
 	
 	m_Name->set_label(itemName);
-	auto pixbuf = Gdk::Pixbuf::create_from_file(imgPath, desiredWidth, desiredHeight);
-	m_Image->set(pixbuf);
+	if(!imgPath.empty()) {
+	    auto pixbuf = Gdk::Pixbuf::create_from_file(imgPath, desiredWidth, desiredHeight);
+	    m_Image->set(pixbuf);
+	}
 	m_Dispatcher.ON_DISPATCH(&TVWidget::update);
 	first = new std::thread([this] { m_Handler.do_work(); });
 

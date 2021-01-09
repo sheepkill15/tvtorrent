@@ -10,6 +10,7 @@
 #include "feed_control_window.h"
 #include "settings_manager.h"
 #include "logger.h"
+#include "feed.h"
 
 TTMainWindow::TTMainWindow(std::function<void(const std::string&)> notification_cb)
 	: tvw_list(),
@@ -175,7 +176,7 @@ skip:
 
 void TTMainWindow::add_item(const Glib::ustring& name, const Glib::ustring& img_path, const Glib::ustring& default_path) {
 
-	if(name.empty() || img_path.empty() || default_path.empty()) return;
+	if(name.empty() || default_path.empty()) return;
 
 	tvw_list.push_back(new TVWidget(name, img_path, default_path));
 	m_FlowBox.insert(tvw_list.back()->GetBox(), tvw_list.size() - 1);
@@ -276,10 +277,10 @@ void TTMainWindow::add_feed(const Glib::ustring &url) {
     feed_list.push_back(new Feed(url));
 }
 
-Feed::Filter& TTMainWindow::add_filter() {
+Feed::Filter* TTMainWindow::add_filter() {
     auto& filter =  m_Filters.emplace_back();
     filter.internal_id = filter_count++;
-    return filter;
+    return &filter;
 }
 
 namespace {
@@ -328,21 +329,23 @@ void TTMainWindow::check_feeds() {
                     for(auto& item : feed->GetItems()) {
                         bool ok = true;
                         for(auto& s : name_split) {
-                            if(item.title.find(s) == std::string::npos)
+                            if(item.title.find(s) == std::string::npos) {
                                 ok = false;
+                                break;
+                            }
                         }
                         if(ok) {
                             std::smatch m;
                             bool const matched = std::regex_search(item.title, m, re);
                             if(matched) {
                                 bool const ifAlreadyDownloaded = check_if_already_downloaded(name_split, m);
-                                if(ifAlreadyDownloaded) {
+                                if(!ifAlreadyDownloaded) {
                                     m_Downloaded.push_back(item.title);
                                     for(auto tvw : tvw_list) {
                                         if(tvw->GetName() == filter.tvw) {
                                             for(auto& torrent : tvw->GetItem().torrents) {
                                                 if(torrent.magnet_uri == item.link)
-                                                    continue;
+                                                    break;
                                             }
                                             tvw->GetHandler().AddTorrent(item.link, tvw->GetItem().default_save_path);
                                             tvw->GetItem().torrents.push_back({item.link, tvw->GetItem().default_save_path});
@@ -371,11 +374,11 @@ bool TTMainWindow::check_if_already_downloaded(const std::vector<std::string>& n
                 ok = false;
             }
         }
-        if(ok && (m[0].str().empty() || item.find(m[0]))) {
-            return false;
+        if(ok && (m[0].str().empty() || item.find(m[0]) != std::string::npos)) {
+            return true;
         }
     }
-    return true;
+    return false;
 }
 
 void TTMainWindow::on_settings_window_hide() {
@@ -408,5 +411,18 @@ void TTMainWindow::external_torrent_empty() {
 void TTMainWindow::notify(const std::string & uri) {
     pending_uri = uri;
     m_Dispatcher.emit();
+}
+
+void TTMainWindow::RemoveFeed(size_t hash) {
+    int i = 0;
+    for(auto& feed : feed_list) {
+        if(feed->channel_data.hash == hash) {
+            break;
+        }
+        i++;
+    }
+    delete feed_list[i];
+    feed_list.erase(feed_list.begin() + i);
+
 }
 

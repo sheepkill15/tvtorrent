@@ -144,7 +144,7 @@ void TTItemWindow::update_torrent_views() {
 }
 
 void TTItemWindow::add_torrent(const Glib::ustring& magnet_url, const Glib::ustring& file_path) {
-
+    Logger::watcher w("Adding torrent" + magnet_url);
     for(auto& torrent : m_Item->torrents) {
         if(torrent.magnet_uri == magnet_url) {
             return;
@@ -156,6 +156,7 @@ void TTItemWindow::add_torrent(const Glib::ustring& magnet_url, const Glib::ustr
 }
 
 void TTItemWindow::add_torrent_row() {
+    Logger::watcher w("Adding row");
     std::set<std::string> names;
     for(auto& row : m_refTreeModel->children()) {
         names.insert(row->get_value(m_Columns.m_col_name));
@@ -188,6 +189,7 @@ void TTItemWindow::add_torrent_row() {
 }
 
 void TTItemWindow::remove_selected_rows(bool remove_files) {
+    Logger::watcher w("Removing row");
 	auto selection = m_TreeView.get_selection();
 	if(!selection) return;
 	auto row = selection->get_selected();
@@ -229,7 +231,9 @@ void TTItemWindow::on_button_settings() {
 
 bool TTItemWindow::on_row_pressed(GdkEventButton *ev) {
 	if(ev->type == GDK_2BUTTON_PRESS) {
+	    Logger::watcher w("Double clicked row");
 		auto selection = m_TreeView.get_selection();
+		if(!selection) return false;
 		auto row = selection->get_selected();
 		unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
 		auto path = m_Item->torrents[id].file_path;
@@ -249,6 +253,7 @@ bool TTItemWindow::on_row_pressed(GdkEventButton *ev) {
 }
 
 void TTItemWindow::on_start_torrent() {
+    Logger::watcher w("Starting torrent");
 	auto selection = m_TreeView.get_selection();
 	if(!selection) return;
 	auto row = selection->get_selected();
@@ -259,6 +264,7 @@ void TTItemWindow::on_start_torrent() {
 }
 
 void TTItemWindow::on_pause_torrent() {
+    Logger::watcher w("Pausing torrent");
 	auto selection = m_TreeView.get_selection();
 	if(!selection) return;
 	auto row = selection->get_selected();
@@ -269,7 +275,7 @@ void TTItemWindow::on_pause_torrent() {
 }
 
 void TTItemWindow::on_torrentadddialog_response(int response_id) {
-	
+
 	m_Dialog->hide();
 
 	switch(response_id) {

@@ -5,6 +5,7 @@
 #include <fstream>
 #include "settings_manager.h"
 #include "resource_manager.h"
+#include "logger.h"
 
 void SettingsManager::init() {
 
@@ -36,6 +37,7 @@ void SettingsManager::init() {
 }
 
 void SettingsManager::save() {
+    Logger::watcher w("Saving settings");
     Json::Value value;
     value["dl_limit"] = m_Settings.dl_limit;
     value["ul_limit"] = m_Settings.ul_limit;

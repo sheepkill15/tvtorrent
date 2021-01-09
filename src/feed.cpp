@@ -1,8 +1,8 @@
 #include "feed.h"
 #include "resource_manager.h"
 #include <utility>
-#include <iostream>
 #include "hash.h"
+#include "logger.h"
 
 
 namespace {
@@ -42,6 +42,7 @@ void Feed::periodic() {
     while(should_work) {
         {
             std::lock_guard<std::mutex> lock(m_Mutex);
+            Logger::watcher w("Parsing feed" + channel_data.title);
             parse_feed();
         }
 	    std::this_thread::sleep_for(std::chrono::minutes(5));
@@ -64,7 +65,12 @@ void Feed::parse_feed() {
 	curl_easy_perform(curl);
 	curl_easy_cleanup(curl);
     doc.clear();
-	doc.parse<0>(buffer.data());
+    try {
+	    doc.parse<0>(buffer.data());
+    } catch(rapidxml::parse_error& er) {
+        Logger::info(er.what());
+        return;
+    }
     auto root = doc.first_node();
     if(std::string(root->name()) != "rss") return;
     auto channel = root->first_node("channel");
@@ -73,7 +79,7 @@ void Feed::parse_feed() {
     auto desc = channel->first_node("description");
     channel_data.title = title->value();
     auto pos = RSS_URL.find("rss");
-    if(pos != std::string::npos) {
+    if(pos != std::string::npos && pos < RSS_URL.size() - 4) {
         channel_data.title += " (" + RSS_URL.substr(pos + 4) + ")";
     }
 
@@ -94,6 +100,12 @@ void Feed::parse_item (rapidxml::xml_node<>* child) {
     auto title = child->first_node("title");
     if(!title) return;
     std::string title_value = title->value();
+    if(title_value.empty()) {
+        auto first_title = title->first_node();
+        if(first_title) {
+            title_value = first_title->value();
+        }
+    }
 
     auto link = child->first_node("link");
     if(!link) return;

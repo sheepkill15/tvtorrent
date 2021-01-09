@@ -1,8 +1,7 @@
 #include "resource_manager.h"
+#include "logger.h"
 #include <cstdlib>
-#include <fstream>
 #include <filesystem>
-#include <iostream>
 
 namespace {
     void create_if_doesnt_exist(const std::string& path) {
@@ -47,6 +46,7 @@ void ResourceManager::init() {
 #endif
 
 void ResourceManager::create_torrent_save(const std::vector<TVWidget *> &tvw_list) {
+    Logger::watcher w("Creating torrent save");
     Json::Value value;
 	int i = 0;
 	for(auto tvw : tvw_list) {
@@ -79,6 +79,7 @@ void ResourceManager::create_torrent_save(const std::vector<TVWidget *> &tvw_lis
 }
 
 void ResourceManager::create_feed_save(const std::vector<Glib::ustring> &feeds, const std::vector<Feed::Filter> &filters, const std::vector<std::string>& downloads) {
+    Logger::watcher w("Create feed save");
     Json::Value value;
     Json::Value _feeds;
     Json::Value _filters;
@@ -119,6 +120,7 @@ void ResourceManager::create_feed_save(const std::vector<Glib::ustring> &feeds, 
 }
 
 bool ResourceManager::get_torrent_save(Json::Value &root) {
+    Logger::watcher w("Getting torrent save");
     Json::CharReaderBuilder builder;
 	builder["collectComments"] = false;
 	std::string errs;
@@ -133,6 +135,8 @@ bool ResourceManager::get_torrent_save(Json::Value &root) {
 }
 
 bool ResourceManager::get_feed_save(Json::Value &root) {
+
+    Logger::watcher w("Getting feed save");
 
     Json::CharReaderBuilder builder;
     builder["collectComments"] = false;
@@ -153,13 +157,14 @@ Glib::ustring ResourceManager::get_resource_path(const Glib::ustring &name) {
 }
 
 void ResourceManager::delete_file(const std::string &name) {
+    Logger::watcher w("Deleting save file");
     try {
         auto path = SAVE_DIRECTORY + DELIM + "torrents" + DELIM + name;
         if(std::filesystem::remove(path)) {
-	        std::cout << "Save deleted! " << path << std::endl;
-	    } else std::cout << "Save not deleted!" << std::endl;
+	        Logger::info("Save deleted! " + path);
+	    } else Logger::error("Save not deleted!");
     } catch(const std::filesystem::filesystem_error& err) {
-			std::cout << "Filesystem error: " << err.what() << std::endl;
+			Logger::error(err.what());
 	}
 }
 
