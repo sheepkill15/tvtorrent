@@ -28,6 +28,7 @@ public:
 	void external_torrent(char argv[]);
 	void external_torrent_empty();
 	void notify(const std::string&);
+	void just_show();
     void add_feed(const Glib::ustring& url);
     void update_limits();
     Feed::Filter* add_filter();
@@ -82,6 +83,8 @@ protected:
 
     Glib::Dispatcher m_Dispatcher;
     std::string pending_uri;
+
+    Glib::Dispatcher just_show_please;
 };
 
 #endif

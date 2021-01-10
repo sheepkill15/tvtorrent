@@ -55,6 +55,7 @@ TTMainWindow::TTMainWindow(std::function<void(const std::string&)> notification_
 
 	show_all_children();
 	m_Dispatcher.ON_DISPATCH(&TTMainWindow::external_torrent_empty);
+	just_show_please.ON_DISPATCH(&TTMainWindow::show);
 
     check = std::thread([this] {check_feeds();});
 }
@@ -424,5 +425,9 @@ void TTMainWindow::RemoveFeed(size_t hash) {
     delete feed_list[i];
     feed_list.erase(feed_list.begin() + i);
 
+}
+
+void TTMainWindow::just_show() {
+    just_show_please.emit();
 }
 

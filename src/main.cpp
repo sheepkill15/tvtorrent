@@ -141,7 +141,7 @@ namespace {
 
     bool should_work = true;
     using namespace boost::interprocess;
-
+#if defined(WIN64) || defined(WIN32)
     void check_for_ipc_message() {
 
         message_queue mq(open_or_create, "mq", 20, sizeof(char) * 500);
@@ -151,13 +151,13 @@ namespace {
                 size_t recvd_size;
                 unsigned int priority;
                 std::string buffer;
-                buffer.resize(550);
                 if (mq.get_num_msg() > 0) {
+                    buffer.resize(550);
                     mq.receive(buffer.data(), sizeof(char) * 500, recvd_size, priority);
                     buffer.resize(recvd_size / sizeof(char));
                     Logger::info(std::string("Received: ") + std::to_string(recvd_size) + ": " + buffer);
                     if(recvd_size <= 10) {
-                        main_window->show();
+                        main_window->just_show();
                     }
                     else
                         main_window->notify(buffer);
@@ -168,7 +168,7 @@ namespace {
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     }
-
+#endif
     void OpenWindow() {
         main_window->show();
         //app->release();
@@ -229,7 +229,8 @@ namespace {
 } // anonymous namespace
 
 int main(int argc, char *argv[]) {
-
+#if defined(WIN32) || defined(WIN64)
+    ResourceManager::init();
     Logger::init();
     try {
         HANDLE h = CreateMutex(nullptr, FALSE, "tvtorrent");
@@ -246,7 +247,7 @@ int main(int argc, char *argv[]) {
                 Logger::info(std::string("Preparing to send ") + std::to_string(teszt.size()) + ": " + teszt);
                 messageQueue.send(teszt.data(), sizeof(char) * teszt.size(), 0);
             }
-            std::cout << "Sent" << std::endl;
+            Logger::info("Sent");
             Logger::cleanup();
             return 0;
         }
@@ -256,10 +257,8 @@ int main(int argc, char *argv[]) {
         Logger::cleanup();
         return -1;
     }
-
     std::thread mine = std::thread([] { check_for_ipc_message(); });
-
-    ResourceManager::init();
+#endif
 
     app = Gtk::Application::create("com.sheepkill15.tvtorrent",
                                    Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
@@ -282,10 +281,10 @@ int main(int argc, char *argv[]) {
     delete main_window;
 #if defined(WIN32) || defined(WIN64)
     Shell_NotifyIcon(NIM_DELETE, &nid);
-#endif
     should_work = false;
     mine.detach();
     message_queue::remove("mq");
+#endif
 
     return result;
 }

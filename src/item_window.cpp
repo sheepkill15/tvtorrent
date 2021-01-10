@@ -235,6 +235,7 @@ bool TTItemWindow::on_row_pressed(GdkEventButton *ev) {
 		auto selection = m_TreeView.get_selection();
 		if(!selection) return false;
 		auto row = selection->get_selected();
+		if(!row) return false;
 		unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
 		auto path = m_Item->torrents[id].file_path;
 #if defined(WIN32) || defined(WIN64)

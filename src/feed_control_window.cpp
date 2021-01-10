@@ -8,8 +8,6 @@
 #include "macros.h"
 #include "hash.h"
 #include "logger.h"
-#include "feed.h"
-#include "item_window.h"
 
 TTFeedControlWindow::TTFeedControlWindow(TTMainWindow* caller)
 : parent(caller)
@@ -34,7 +32,7 @@ TTFeedControlWindow::TTFeedControlWindow(TTMainWindow* caller)
             auto filter_list_item = Gtk::make_managed<Gtk::Entry>();
             filter_list_item->set_text(filter.id);
             filter_list->append(*filter_list_item);
-            filter_list_item->ON_BUTTON_PRESSED_BIND(&TTFeedControlWindow::on_filter_pressed, int), filter_list->get_children().size() -1));
+            filter_list_item->ON_BUTTON_PRESSED_BIND(&TTFeedControlWindow::on_filter_pressed, Gtk::ListBoxRow*), filter_list->get_row_at_index(filter_list->get_children().size() -1)));
             //filter_list_item->ON_ACTIVATE(&TTFeedControlWindow::on_filter_activate);
     }
     for(auto tvw : caller->tvw_list) {
@@ -100,7 +98,7 @@ void TTFeedControlWindow::on_add_filter() {
     //filter_list_item->ON_ACTIVATE(&TTFeedControlWindow::on_filter_activate);
     filter_list->show_all_children();
 
-    filter_list_item->ON_BUTTON_PRESSED_BIND(&TTFeedControlWindow::on_filter_pressed, int), filter_list->get_children().size() -1));
+    filter_list_item->ON_BUTTON_PRESSED_BIND(&TTFeedControlWindow::on_filter_pressed, Gtk::ListBoxRow*), filter_list->get_row_at_index(filter_list->get_children().size() -1)));
     filter_list->select_row(*filter_list->get_row_at_index(filter_list->get_children().size()-1));
 }
 
@@ -315,8 +313,8 @@ void TTFeedControlWindow::update_results() {
     result_list->show_all_children();
 }
 
-bool TTFeedControlWindow::on_filter_pressed(GdkEventButton* ev, int index) {
-    filter_list->select_row(*filter_list->get_row_at_index(index));
+bool TTFeedControlWindow::on_filter_pressed(GdkEventButton* ev, Gtk::ListBoxRow* row) {
+    filter_list->select_row(*row);
     return true;
 }
 

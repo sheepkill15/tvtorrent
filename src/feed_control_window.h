@@ -27,7 +27,7 @@ private:
     void on_remove_feed();
     void on_filter_activate(Gtk::ListBoxRow*);
 
-    bool on_filter_pressed(GdkEventButton* ev, int index);
+    bool on_filter_pressed(GdkEventButton* ev, Gtk::ListBoxRow*);
 
     void on_dl_changed();
     void on_vp_changed();
