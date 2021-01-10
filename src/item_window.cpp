@@ -13,7 +13,10 @@
 #include "formatter.h"
 #include "resource_manager.h"
 #include "logger.h"
+
+#if defined(WIN32) || defined(WIN64)
 #include <shellapi.h>
+#endif
 
 TTItemWindow::TTItemWindow(TVWidget& item) 
 	: m_Item(&item.GetItem()),
