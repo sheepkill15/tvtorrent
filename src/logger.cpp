@@ -8,24 +8,27 @@
 
 using clk = std::chrono::system_clock;
 
-#if defined(_WIN64) || defined(_WIN32) // Windows platform specific
-
 namespace {
+
+
+    std::string LOG_DIRECTORY;
     void create_if_doesnt_exist(const std::string& path) {
         if(!std::filesystem::is_directory(path) || !std::filesystem::exists(path)) {
             std::filesystem::create_directory(path);
         }
     }
-
-    std::string LOG_DIRECTORY;
-    constexpr const char DELIM = '\\';
-
     std::string formatted_now() {
         std::stringstream ss;
         auto now = clk::to_time_t(clk::now());
         ss << '[' << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M") << ']';
         return ss.str();
     }
+}
+
+#if defined(_WIN64) || defined(_WIN32) // Windows platform specific
+
+namespace {
+    constexpr const char DELIM = '\\';
 }
 
 void Logger::init() {

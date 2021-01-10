@@ -66,6 +66,12 @@ namespace {
 
         Logger::info("Submitted notification");
     }
+#else
+
+    void ShowNotification(const std::string &text) {
+
+            Logger::error("Failed to create notification");
+    }
 
 #endif
 

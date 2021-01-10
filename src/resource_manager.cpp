@@ -33,13 +33,17 @@ void ResourceManager::init() {
 #else // Linux platform specific
 
 namespace {
-    static std::string SAVE_DIRECTORY;
+    std::string SAVE_DIRECTORY;
     constexpr static const char DELIM = '/';
-    constexpr static const char RESOURCE_DIRECTORY[] = "/usr/local/share/TVTorrent/res";
+    std::string RESOURCE_DIRECTORY = "/usr/local/share/TVTorrent/res";
 }
 
 void ResourceManager::init() {
 	SAVE_DIRECTORY = std::string(getenv("HOME")) + "/.local/TVTorrent";
+    if(std::filesystem::exists("res"))
+        RESOURCE_DIRECTORY = "res";
+    else if(std::filesystem::exists("../res"))
+        RESOURCE_DIRECTORY = "../res";
     create_if_doesnt_exist(SAVE_DIRECTORY);
 }
 
