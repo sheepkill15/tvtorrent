@@ -8,9 +8,9 @@
 #include "macros.h"
 #include "hash.h"
 #include "logger.h"
+#include "container.h"
 
-TTFeedControlWindow::TTFeedControlWindow(TTMainWindow* caller)
-: parent(caller)
+TTFeedControlWindow::TTFeedControlWindow()
 {
     Logger::watcher w("Initializing Feed control window!");
     auto builder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_feedcontrol.glade"));
@@ -28,21 +28,21 @@ TTFeedControlWindow::TTFeedControlWindow(TTMainWindow* caller)
 
     builder->get_widget("FilterList", filter_list);
     filter_list->ON_ROW_SELECTED(&TTFeedControlWindow::on_filter_activate);
-    for(auto& filter : caller->m_Filters) {
+    for(auto filter : DataContainer::get_filters()) {
             auto filter_list_item = Gtk::make_managed<Gtk::Entry>();
-            filter_list_item->set_text(filter.id);
+            filter_list_item->set_text(filter->id);
             filter_list->append(*filter_list_item);
             filter_list_item->ON_BUTTON_PRESSED_BIND(&TTFeedControlWindow::on_filter_pressed, Gtk::ListBoxRow*), filter_list->get_row_at_index(filter_list->get_children().size() -1)));
             //filter_list_item->ON_ACTIVATE(&TTFeedControlWindow::on_filter_activate);
     }
-    for(auto tvw : caller->tvw_list) {
-        tvw_chooser->append(tvw->GetName());
+    for(auto& group : DataContainer::get_groups()) {
+        tvw_chooser->append(group.first->name);
     }
     tvw_chooser->set_active(0);
 
     builder->get_widget("FeedList", feed_list);
 
-    for(auto feed : caller->feed_list) {
+    for(auto feed : DataContainer::get_feeds()) {
         auto feed_list_item = Gtk::make_managed<Gtk::CheckButton>(feed->channel_data.title);;
         feed_list_item->set_data("feed", reinterpret_cast<void *>(feed));
         feed_list_item->ON_CLICK_BIND(&TTFeedControlWindow::on_feed_list_item_click, Gtk::CheckButton*), feed_list_item));
@@ -75,14 +75,8 @@ TTFeedControlWindow::TTFeedControlWindow(TTMainWindow* caller)
 TTFeedControlWindow::~TTFeedControlWindow() {
 
     for(int i = 0; i < filter_list->get_children().size(); i++) {
-//        int* id = static_cast<int*>(child->get_data("filter_id"));
-//        for(auto& filter : parent->GetFilters()) {
-//            if(filter.internal_id == *id) {
-//                filter.id = child->get_text();
-//                break;
-//            }
-//        }
-        Feed::Filter* filter = &parent->m_Filters[i];
+
+        Feed::Filter* filter = DataContainer::get_filters()[i];
         filter->id = reinterpret_cast<Gtk::Entry*>(filter_list->get_row_at_index(i)->get_child())->get_text();
     }
 
@@ -93,9 +87,8 @@ void TTFeedControlWindow::on_add_filter() {
     Logger::watcher w("Adding filter");
 
     auto filter_list_item = Gtk::make_managed<Gtk::Entry>();
-    parent->add_filter();
+    DataContainer::add_filter();
     filter_list->append(*filter_list_item);
-    //filter_list_item->ON_ACTIVATE(&TTFeedControlWindow::on_filter_activate);
     filter_list->show_all_children();
 
     filter_list_item->ON_BUTTON_PRESSED_BIND(&TTFeedControlWindow::on_filter_pressed, Gtk::ListBoxRow*), filter_list->get_row_at_index(filter_list->get_children().size() -1)));
@@ -110,14 +103,8 @@ void TTFeedControlWindow::on_remove_filter() {
         return;
     }
     int i = 0;
-    Feed::Filter* filt = &parent->m_Filters[selected->get_index()];
-    for(const auto& filter : parent->GetFilters()) {
-        if(filter.internal_id == filt->internal_id) {
-            parent->RemoveFilter(i);
-            break;
-        }
-        i++;
-    }
+    Feed::Filter* filt = DataContainer::get_filters()[selected->get_index()];
+    DataContainer::remove_filter(filt->internal_id);
     filter_list->remove(*selected);
 
     selected_filter = nullptr;
@@ -140,10 +127,10 @@ void TTFeedControlWindow::on_add_feed() {
 
     switch(result) {
         case Gtk::RESPONSE_OK: {
-            parent->add_feed(feedurl->get_text());
+            DataContainer::add_feed(feedurl->get_text());
 
-            auto feed_list_item = Gtk::make_managed<Gtk::CheckButton>(parent->feed_list.back()->channel_data.title);
-            feed_list_item->set_data("feed", reinterpret_cast<void *>(parent->feed_list.back()));
+            auto feed_list_item = Gtk::make_managed<Gtk::CheckButton>(DataContainer::get_feeds().back()->channel_data.title);
+            feed_list_item->set_data("feed", reinterpret_cast<void *>(DataContainer::get_feeds().back()));
             m_Feeds.push_back(feed_list_item);
             feed_list_item->ON_CLICK_BIND(&TTFeedControlWindow::on_feed_list_item_click, Gtk::CheckButton*), feed_list_item));
 
@@ -168,7 +155,7 @@ void TTFeedControlWindow::on_remove_feed() {
     Gtk::ComboBoxText* cbt;
     builder->get_widget("FeedList", cbt);
 
-    for(auto& feed : parent->feed_list) {
+    for(auto& feed : DataContainer::get_feeds()) {
         cbt->append(feed->channel_data.title + " (" + std::to_string(feed->channel_data.hash) + ')');
     }
 
@@ -182,7 +169,7 @@ void TTFeedControlWindow::on_remove_feed() {
             auto zar = selected.rfind(')');
             auto subsel = selected.substr(nyit + 1, zar - nyit - 1);
             size_t hash = std::stoul(subsel);
-            parent->RemoveFeed(hash);
+            DataContainer::remove_feed(hash);
             UpdateFeeds(hash);
             break;
         }
@@ -201,7 +188,7 @@ void TTFeedControlWindow::on_filter_activate(Gtk::ListBoxRow* row) {
     row = filter_list->get_selected_row();
     if(row == nullptr) return;
     int inddd = row->get_index();
-    selected_filter = &parent->m_Filters[inddd];
+    selected_filter = DataContainer::get_filters()[inddd];
     download_name->set_text(selected_filter->name);
     ver_pattern->set_text(selected_filter->ver_pattern);
     tvw_chooser->set_active_text(selected_filter->tvw);
@@ -294,7 +281,7 @@ void TTFeedControlWindow::update_results() {
     std::vector<std::string> name_split;
     split(selected_filter->name, name_split, ' ');
     for(const auto& feed : selected_filter->feeds) {
-        for(const auto& item : parent->feed_list) {
+        for(const auto& item : DataContainer::get_feeds()) {
             if(item->channel_data.hash == feed) {
                 for(const auto& feed_item : item->GetItems()) {
                     bool ok = true;

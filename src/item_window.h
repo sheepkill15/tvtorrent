@@ -34,7 +34,7 @@ class TTItemWindow : public Gtk::Window {
 
 public:
 
-	explicit TTItemWindow(TVWidget& item);
+	explicit TTItemWindow(size_t hash);
 	~TTItemWindow() override;
 
 	void on_button_add();
@@ -46,7 +46,7 @@ public:
 	void on_start_torrent();
 	void on_pause_torrent();
 
-	void add_torrent(const Glib::ustring& magnet_url, const Glib::ustring& file_path);
+	void add_torrent(const Glib::ustring& magnet_url, const Glib::ustring& file_path) const;
 	//void update_torrents(TTItemWindow* caller);
 	void update_torrent_views();
 	void add_torrent_row();
@@ -65,9 +65,7 @@ protected:
 	Gtk::MessageDialog* m_RemoveDialog{};
 
 private:
-	TorrentHandler& m_TorrentHandler;
 	ModelColumns m_Columns;
-	TVItem* m_Item;
 
 	Glib::RefPtr<Gtk::Builder> builder;
 	Glib::RefPtr<Gtk::Builder> remove_builder;
@@ -77,6 +75,8 @@ private:
 
 	int subscription;
 	int subscription_for_added;
+
+	const size_t hash;
 };
 
 #endif

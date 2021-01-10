@@ -1,5 +1,4 @@
 #include "torrent_handler.h"
-#include <fstream>
 #include <libtorrent/magnet_uri.hpp>
 #include <libtorrent/torrent_info.hpp>
 #include <libtorrent/alert_types.hpp>
@@ -8,9 +7,9 @@
 #include "item_window.h"
 #include "resource_manager.h"
 #include "settings_manager.h"
-#include "main_window.h"
 #include "formatter.h"
 #include "logger.h"
+#include "container.h"
 #include <mutex>
 #include <thread>
 #include <chrono>
@@ -52,12 +51,22 @@ TorrentHandler::TorrentHandler() {
                                              | lt::alert_category::storage
                                              | lt::alert_category::status);
     _ses.apply_settings(p);
+
+    own_work = std::thread([this] { do_work(); });
 }
 
 TorrentHandler::~TorrentHandler() {
-    std::lock_guard<std::mutex> lock(m_Mutex);
+    //std::lock_guard<std::mutex> lock(m_Mutex);
+
+    signal_stop();
+    own_work.detach();
+//    if(own_work.joinable()) {
+//        own_work.join();
+//    }
+
     for (auto &pair : m_Handles) {
-        _ses.remove_torrent(pair.second);
+        if(pair.second.is_valid())
+            _ses.remove_torrent(pair.second);
     }
     for (auto &pair : m_Threads) {
         pair.second.detach();
@@ -174,7 +183,7 @@ void TorrentHandler::do_work() {
 }
 
 void TorrentHandler::signal_stop() {
-    std::lock_guard<std::mutex> lock(m_Mutex);
+    //std::lock_guard<std::mutex> lock(m_Mutex);
     should_work = false;
 
 }
@@ -257,14 +266,14 @@ void TorrentHandler::setup_torrent(const std::string &url, const std::string &fi
             }
         }
         bool add = true;
-        for (auto &download : TTMainWindow::m_Downloaded) {
+        for (auto &download : DataContainer::get_downloaded()) {
             if (params.name == download) {
                 add = false;
                 break;
             }
         }
         if (add)
-            TTMainWindow::m_Downloaded.push_back(params.name);
+            DataContainer::add_downloaded(params.name);
         params.download_limit = SettingsManager::get_settings().dl_limit * Formatter::MEGABYTE;
         params.upload_limit = SettingsManager::get_settings().ul_limit * Formatter::MEGABYTE;
         params.save_path = file_path;

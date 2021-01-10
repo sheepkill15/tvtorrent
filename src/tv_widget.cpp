@@ -3,22 +3,16 @@
 #include "macros.h"
 #include "formatter.h"
 #include "resource_manager.h"
+#include "container.h"
 
-TVWidget::TVWidget(const Glib::ustring& itemName, const Glib::ustring& imgPath, const Glib::ustring& default_path)
-	:m_Dispatcher()
+TVWidget::TVWidget(const Glib::ustring& itemName, const Glib::ustring& imgPath)
+	:m_Dispatcher(),
+	hash(Unique::from_string(itemName))
 {
-	init(itemName, imgPath, default_path);
+	init(itemName, imgPath);
 }
 
-void TVWidget::SetupTorrents() {
-	for(auto& tvt : m_Item.torrents) {
-		m_Handler.AddTorrent(tvt.magnet_uri, tvt.file_path);
-	}
-	update();
-}
-
-void TVWidget::init(const Glib::ustring &itemName, const Glib::ustring &imgPath, const Glib::ustring& default_path) {
-	m_Item = {itemName, imgPath, default_path};
+void TVWidget::init(const Glib::ustring &itemName, const Glib::ustring &imgPath) {
 
 	builder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_tvwidget.glade"));
 	builder->get_widget("TVWidget", m_Box);
@@ -39,16 +33,17 @@ void TVWidget::init(const Glib::ustring &itemName, const Glib::ustring &imgPath,
 	    m_Image->set(pixbuf);
 	}
 	m_Dispatcher.ON_DISPATCH(&TVWidget::update);
-	first = new std::thread([this] { m_Handler.do_work(); });
+	//first = new std::thread([this] { m_Handler.do_work(); });
 
-	subscription = m_Handler.subscribe((const std::function<void()> &) [this] { TVWidget::notify(); });
+	subscription = DataContainer::get_group(hash).second->subscribe((const std::function<void()> &) [this] { TVWidget::notify(); });
 }
 
 void TVWidget::update() {
-	m_Downloads->set_label(Glib::ustring::format(m_Item.torrents.size(), " downloads"));
+    auto group = DataContainer::get_group(hash);
+	m_Downloads->set_label(Glib::ustring::format(group.first->torrents.size(), " downloads"));
 	
 	lt::torrent_status maxi;
-	for(auto& pair : m_Handler.m_Handles) {
+	for(auto& pair : group.second->m_Handles) {
 		auto& handle = pair.second;
 		if(!handle.is_valid()) continue;
 		auto status = handle.status();
@@ -77,10 +72,6 @@ void TVWidget::notify() {
 
 TVWidget::~TVWidget() {
 
-	m_Handler.unsubscribe(subscription);
-
+	DataContainer::get_group(hash).second->unsubscribe(subscription);
 	delete m_Box;
-	m_Handler.signal_stop();
-	first->detach();
-	delete first;
 }

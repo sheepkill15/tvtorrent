@@ -1,7 +1,6 @@
 #include "feed.h"
 #include "resource_manager.h"
 #include <utility>
-#include "hash.h"
 #include "logger.h"
 
 
@@ -17,9 +16,9 @@ size_t Feed::writer(char *data, size_t size, size_t nmemb, std::string *buffer){
     return result;
 }
 Feed::Feed(std::string  rss_url)
-    :RSS_URL(std::move(rss_url))
+    : channel_data {.hash = Unique::from_string(rss_url)},
+    RSS_URL(std::move(rss_url))
 {
-    channel_data.hash = Unique::from_string(RSS_URL);
     //parse_feed(true);
     own = std::thread([this] {periodic();});
 }
@@ -118,4 +117,8 @@ void Feed::parse_item (rapidxml::xml_node<>* child) {
 
 
     m_Items.push_back({title_value, link_value, pubDate_value});
+}
+
+bool Feed::operator==(size_t h) const {
+    return channel_data.hash == h;
 }

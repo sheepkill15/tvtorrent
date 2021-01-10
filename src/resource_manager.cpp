@@ -49,21 +49,21 @@ void ResourceManager::init() {
 
 #endif
 
-void ResourceManager::create_torrent_save(const std::vector<TVWidget *> &tvw_list) {
+void ResourceManager::create_torrent_save(const std::unordered_map<TVItem*, TorrentHandler*>& map) {
     Logger::watcher w("Creating torrent save");
     Json::Value value;
 	int i = 0;
-	for(auto tvw : tvw_list) {
+	for(auto& tvw : map) {
 		Json::Value info;
-		auto& item = tvw->GetItem();
-		info["name"] = (std::string)item.name;
-		info["img_path"] = (std::string)item.img_path;
-		info["default_path"] = (std::string)item.default_save_path;
+		auto item = tvw.first;
+		info["name"] = (std::string)item->name;
+		info["img_path"] = (std::string)item->img_path;
+		info["default_path"] = (std::string)item->default_save_path;
 		
 		Json::Value torrents;
-		for(int j = 0; j < item.torrents.size(); j++) {
-			torrents[j]["magnet_uri"] = (std::string)item.torrents[j].magnet_uri;
-			torrents[j]["file_path"] = (std::string)item.torrents[j].file_path;
+		for(int j = 0; j < item->torrents.size(); j++) {
+			torrents[j]["magnet_uri"] = (std::string)item->torrents[j].magnet_uri;
+			torrents[j]["file_path"] = (std::string)item->torrents[j].file_path;
 		}
 
 		info["torrents"] = torrents;
@@ -82,7 +82,7 @@ void ResourceManager::create_torrent_save(const std::vector<TVWidget *> &tvw_lis
 	of.close();
 }
 
-void ResourceManager::create_feed_save(const std::vector<Glib::ustring> &feeds, const std::vector<Feed::Filter> &filters, const std::vector<std::string>& downloads) {
+void ResourceManager::create_feed_save(const std::vector<Glib::ustring> &feeds, const std::vector<Feed::Filter*> &filters, const std::vector<std::string>& downloads) {
     Logger::watcher w("Create feed save");
     Json::Value value;
     Json::Value _feeds;
@@ -94,14 +94,14 @@ void ResourceManager::create_feed_save(const std::vector<Glib::ustring> &feeds, 
     }
     value["feeds"] = _feeds;
     i = 0;
-    for(auto& filter : filters) {
+    for(auto filter : filters) {
         Json::Value _filter;
-        _filter["id"] = std::string(filter.id);
-        _filter["name"] = std::string(filter.name);
-        _filter["ver_pattern"] = std::string(filter.ver_pattern);
-        _filter["tvw"] = std::string(filter.tvw);
+        _filter["id"] = std::string(filter->id);
+        _filter["name"] = std::string(filter->name);
+        _filter["ver_pattern"] = std::string(filter->ver_pattern);
+        _filter["tvw"] = std::string(filter->tvw);
         int j = 0;
-        for(auto& feed : filter.feeds) {
+        for(auto& feed : filter->feeds) {
             _filter["feeds"][j++] = feed;
         }
         _filters[i++] = _filter;

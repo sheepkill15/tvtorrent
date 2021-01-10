@@ -8,9 +8,8 @@
 #include "macros.h"
 #include "resource_manager.h"
 #include "feed_control_window.h"
-#include "settings_manager.h"
 #include "logger.h"
-#include "feed.h"
+#include "container.h"
 
 TTMainWindow::TTMainWindow(std::function<void(const std::string&)> notification_cb)
 	: tvw_list(),
@@ -62,29 +61,13 @@ TTMainWindow::TTMainWindow(std::function<void(const std::string&)> notification_
 
 TTMainWindow::~TTMainWindow() {
 
-    ResourceManager::create_torrent_save(tvw_list);
-
-    std::vector<Glib::ustring> feeds;
-    for(auto& feed : feed_list) {
-        feeds.emplace_back(feed->GetUrl());
+    for(auto tvw : tvw_list) {
+        delete tvw;
     }
-
-    ResourceManager::create_feed_save(feeds, m_Filters, m_Downloaded);
-
-    SettingsManager::save();
-
-	for(auto tvw : tvw_list) {
-		delete tvw;
-	}
-
-	for(auto feed : feed_list) {
-	    delete feed;
-	}
 
 	should_work = false;
 	check.detach();
 
-	Logger::cleanup();
 }
 
 void TTMainWindow::external_torrent(char argv[]) {
@@ -95,8 +78,8 @@ void TTMainWindow::external_torrent(char argv[]) {
 	Gtk::ComboBoxText* item_list;
 	builder->get_widget("ItemList", item_list);
 	int i = 0;
-	for(auto tvw : tvw_list) {
-		item_list->insert(i, tvw->GetItem().name);
+	for(auto& pair : DataContainer::get_groups()) {
+		item_list->insert(i, pair.first->name);
 		i++;
 	}
 
@@ -109,9 +92,9 @@ void TTMainWindow::external_torrent(char argv[]) {
 	switch(result) {
 		case Gtk::RESPONSE_YES:
 		{
-			auto tvw = tvw_list[item_list->get_active_row_number()];
-			tvw->GetItem().torrents.push_back({argv, file_path->get_filename()});
-			tvw->GetHandler().AddTorrent(argv, file_path->get_filename());
+			auto pair = DataContainer::get_group(item_list->get_active_text());
+			pair.first->torrents.push_back({argv, file_path->get_filename()});
+			pair.second->AddTorrent(argv, file_path->get_filename());
 			break;
 		}
 	    case Gtk::RESPONSE_NO:
@@ -122,66 +105,16 @@ void TTMainWindow::external_torrent(char argv[]) {
 	delete dialog;
 }
 
-void TTMainWindow::init_items() {
-	Json::Value root;
-
-	bool ok = ResourceManager::get_torrent_save(root);
-
-	if(ok) {
-		for(int i = 0; i < root.size(); i++) {
-		    if(!root[i].isMember("default_path")) continue;
-			add_item(root[i]["name"].asString(), root[i]["img_path"].asString(), root[i]["default_path"].asString());
-			if(root[i].isMember("torrents") && root[i]["torrents"]) {
-				for(int j = 0; j < root[i]["torrents"].size(); j++) {
-				    std::string uri = root[i]["torrents"][j]["magnet_uri"].asString();
-				    for(auto& torrent : tvw_list[i]->GetItem().torrents) {
-				        if(torrent.magnet_uri == uri) {
-				            goto skip;
-				        }
-				    }
-					tvw_list[i]->GetItem().torrents.push_back({uri, root[i]["torrents"][j]["file_path"].asString()});
-skip:
-				    ;
-				}
-				tvw_list.back()->SetupTorrents();
-			}
-		}
-	}
-	Json::Value feed_root;
-
-	ok = ResourceManager::get_feed_save(feed_root);
-	if(ok) {
-	    for(const auto & i : feed_root["feeds"]) {
-	        add_feed(i.asString());
-	    }
-	    for(const auto& i : feed_root["filters"]) {
-            auto& filter =  m_Filters.emplace_back();
-            filter.internal_id = filter_count++;
-            filter.id = i["id"].asString();
-            filter.name = i["name"].asString();
-            filter.ver_pattern = i["ver_pattern"].asString();
-            filter.tvw = i["tvw"].asString();
-            if(i.isMember("feeds") && i["feeds"]) {
-                for(const auto& j : i["feeds"]) {
-                    if(j.is<size_t>())
-                        filter.feeds.emplace_back(j.asLargestUInt());
-                }
-            }
-	    }
-
-	    for(const auto& i : feed_root["downloads"]) {
-	        m_Downloaded.push_back(i.asString());
-	    }
-	}
-}
-
 void TTMainWindow::add_item(const Glib::ustring& name, const Glib::ustring& img_path, const Glib::ustring& default_path) {
 
 	if(name.empty() || default_path.empty()) return;
 
-	tvw_list.push_back(new TVWidget(name, img_path, default_path));
+	tvw_list.push_back(new TVWidget(name, img_path));
 	m_FlowBox.insert(tvw_list.back()->GetBox(), tvw_list.size() - 1);
-    tvw_list.back()->GetHandler().subscribe_for_completed([this](const lt::torrent_status& callback) {TTMainWindow::on_torrent_complete(callback);});
+
+	DataContainer::add_group(name, img_path, default_path);
+
+    DataContainer::get_group(name).second->subscribe_for_completed([this](const lt::torrent_status& callback) {TTMainWindow::on_torrent_complete(callback);});
 	show_all_children();
 }
 
@@ -222,7 +155,12 @@ void TTMainWindow::on_button_remove() {
 	auto tvw = tvw_list[index];
 	m_FlowBox.remove(tvw->GetBox());
 	tvw_list.erase(tvw_list.begin() + index);
+
+	DataContainer::remove_group(tvw->hash);
+
 	delete tvw;
+
+
 }
 
 void TTMainWindow::on_button_settings() {
@@ -245,7 +183,7 @@ bool TTMainWindow::on_tvwidget_double_click(GdkEventButton* ev) {
 		if(index < 0) return false;
 		TVWidget* item = tvw_list[index];
 		Logger::info("Creating item window");
-		auto window = new TTItemWindow(*item);
+		auto window = new TTItemWindow(item->hash);
 		Logger::info("Created!");
 		window->ON_HIDE_BIND(&TTMainWindow::on_item_window_hide, TTItemWindow*), window));
 		window->show();
@@ -264,7 +202,7 @@ void TTMainWindow::on_button_feeds() {
         feed_control_window->window->show();
         return;
     }
-    feed_control_window = new TTFeedControlWindow(this);
+    feed_control_window = new TTFeedControlWindow();
     feed_control_window->window->ON_HIDE(&TTMainWindow::on_feedcontrol_window_hide);
 }
 
@@ -272,16 +210,6 @@ void TTMainWindow::on_feedcontrol_window_hide() {
     delete feed_control_window;
     feed_control_window = nullptr;
     refresh_check();
-}
-
-void TTMainWindow::add_feed(const Glib::ustring &url) {
-    feed_list.push_back(new Feed(url));
-}
-
-Feed::Filter* TTMainWindow::add_filter() {
-    auto& filter =  m_Filters.emplace_back();
-    filter.internal_id = filter_count++;
-    return &filter;
 }
 
 namespace {
@@ -318,15 +246,15 @@ void TTMainWindow::check_feeds() {
         {
             std::lock_guard<std::mutex> lock(m_Mutex);
             if(feed_control_window != nullptr) goto skip;
-            for(auto& filter : m_Filters) {
-                if(filter.tvw.empty() || filter.name.empty()) continue;
-                std::string filter_processed = "\\b" + filter.ver_pattern;
+            for(auto& filter : DataContainer::get_filters()) {
+                if(filter->tvw.empty() || filter->name.empty()) continue;
+                std::string filter_processed = "\\b" + filter->ver_pattern;
                 ReplaceAll(filter_processed, "X", "[0-9]");
                 filter_processed += "\\b";
                 std::regex re(filter_processed);
                 std::vector<std::string> name_split;
-                split(filter.name, name_split, ' ');
-                for(auto& feed : feed_list) {
+                split(filter->name, name_split, ' ');
+                for(auto& feed : DataContainer::get_feeds()) {
                     for(auto& item : feed->GetItems()) {
                         bool ok = true;
                         for(auto& s : name_split) {
@@ -341,15 +269,10 @@ void TTMainWindow::check_feeds() {
                             if(matched) {
                                 bool const ifAlreadyDownloaded = check_if_already_downloaded(name_split, m);
                                 if(!ifAlreadyDownloaded) {
-                                    m_Downloaded.push_back(item.title);
-                                    for(auto tvw : tvw_list) {
-                                        if(tvw->GetName() == filter.tvw) {
-                                            for(auto& torrent : tvw->GetItem().torrents) {
-                                                if(torrent.magnet_uri == item.link)
-                                                    break;
-                                            }
-                                            tvw->GetHandler().AddTorrent(item.link, tvw->GetItem().default_save_path);
-                                            tvw->GetItem().torrents.push_back({item.link, tvw->GetItem().default_save_path});
+                                    DataContainer::add_downloaded(item.title);
+                                    for(auto& group : DataContainer::get_groups()) {
+                                        if(group.first->name == filter->tvw) {
+                                            DataContainer::add_torrent(group.first->hash, item.link, group.first->default_save_path);
                                             break;
                                         }
                                     }
@@ -368,7 +291,7 @@ skip:
 }
 
 bool TTMainWindow::check_if_already_downloaded(const std::vector<std::string>& name, const std::smatch& m) {
-    for(auto& item : m_Downloaded) {
+    for(auto& item : DataContainer::get_downloaded()) {
         bool ok = true;
         for(auto& s : name) {
             if(item.find(s) == std::string::npos) {
@@ -388,8 +311,8 @@ void TTMainWindow::on_settings_window_hide() {
 }
 
 void TTMainWindow::update_limits() {
-    for(auto tvw : tvw_list) {
-        tvw->GetHandler().update_limits();
+    for(auto group : DataContainer::get_groups()) {
+        group.second->update_limits();
     }
 }
 
@@ -414,20 +337,16 @@ void TTMainWindow::notify(const std::string & uri) {
     m_Dispatcher.emit();
 }
 
-void TTMainWindow::RemoveFeed(size_t hash) {
-    int i = 0;
-    for(auto& feed : feed_list) {
-        if(feed->channel_data.hash == hash) {
-            break;
-        }
-        i++;
-    }
-    delete feed_list[i];
-    feed_list.erase(feed_list.begin() + i);
-
-}
-
 void TTMainWindow::just_show() {
     just_show_please.emit();
+}
+
+void TTMainWindow::init_items() {
+    for(auto& group : DataContainer::get_groups()) {
+        tvw_list.push_back(new TVWidget(group.first->name, group.first->img_path));
+        m_FlowBox.insert(tvw_list.back()->GetBox(), tvw_list.size() - 1);
+
+        group.second->subscribe_for_completed([this](const lt::torrent_status& stat) { TTMainWindow::on_torrent_complete(stat); });
+    }
 }
 

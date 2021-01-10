@@ -13,6 +13,7 @@
 #include "formatter.h"
 #include "resource_manager.h"
 #include "logger.h"
+#include "container.h"
 
 #if defined(WIN32) || defined(WIN64)
 #include <shellapi.h>
@@ -20,14 +21,14 @@
 
 #endif
 
-TTItemWindow::TTItemWindow(TVWidget& item) 
-	: m_Item(&item.GetItem()),
+TTItemWindow::TTItemWindow(size_t hash)
+	: hash(hash),
 	m_Dispatcher(),
 	m_Dispatcher_for_added(),
-	m_TorrentHandler(item.GetHandler()),
 	m_Box(Gtk::ORIENTATION_VERTICAL)
 {
-	set_title(m_Item->name);
+    auto group = DataContainer::get_group(hash);
+	set_title(group.first->name);
 	set_border_width(10);
 	set_default_size(1280, 720);
 	
@@ -35,7 +36,7 @@ TTItemWindow::TTItemWindow(TVWidget& item)
 
 	Gtk::HeaderBar* headerbar = nullptr;
 	m_refBuilder->get_widget("HeaderBar", headerbar);
-	headerbar->set_title(item.GetName());
+	headerbar->set_title(group.first->name);
 
 	Gtk::Button* add_button = nullptr;
 	m_refBuilder->get_widget("AddButton", add_button);
@@ -55,7 +56,7 @@ TTItemWindow::TTItemWindow(TVWidget& item)
 
 	Gtk::FileChooserButton* path;
 	builder->get_widget("FilePath", path);
-	path->set_filename(m_Item->default_save_path);
+	path->set_filename(group.first->default_save_path);
 
 	m_Dialog->ON_RESPONSE(&TTItemWindow::on_torrentadddialog_response);
 
@@ -111,7 +112,7 @@ TTItemWindow::TTItemWindow(TVWidget& item)
 
 	show_all_children();
 
-	for(auto& pair : m_TorrentHandler.m_Handles) {
+	for(int i = 0; i < group.second->m_Handles.size(); i++) {
 		add_torrent_row();
 	}
 
@@ -122,8 +123,8 @@ TTItemWindow::TTItemWindow(TVWidget& item)
 	m_Dispatcher.ON_DISPATCH(&TTItemWindow::update_torrent_views);
 	m_Dispatcher_for_added.ON_DISPATCH(&TTItemWindow::add_torrent_row);
 
-	subscription_for_added = m_TorrentHandler.subscribe_for_added((const std::function<void()>&) [this] {TTItemWindow::notify_added(); });
-	subscription = m_TorrentHandler.subscribe((const std::function<void()> &) [this] { TTItemWindow::notify(); });
+	subscription_for_added = group.second->subscribe_for_added((const std::function<void()>&) [this] {TTItemWindow::notify_added(); });
+	subscription = group.second->subscribe((const std::function<void()> &) [this] { TTItemWindow::notify(); });
 
 	Logger::info("Subscriptions and dispatchers initialized");
 }
@@ -133,9 +134,9 @@ void TTItemWindow::notify() {
 }
 
 void TTItemWindow::update_torrent_views() {
-
+    auto group = DataContainer::get_group(hash);
 	for(const auto& row: m_refTreeModel->children()) {
-	    auto& handle = m_TorrentHandler.m_Handles[row->get_value(m_Columns.m_col_name)];
+	    auto& handle = group.second->m_Handles[row->get_value(m_Columns.m_col_name)];
 	    if(!handle.is_valid()) continue;
 		auto status = handle.status();
 		row[m_Columns.m_col_progress] = status.progress_ppm / 10000;
@@ -148,16 +149,10 @@ void TTItemWindow::update_torrent_views() {
 	}
 }
 
-void TTItemWindow::add_torrent(const Glib::ustring& magnet_url, const Glib::ustring& file_path) {
+void TTItemWindow::add_torrent(const Glib::ustring& magnet_url, const Glib::ustring& file_path) const {
     Logger::watcher w("Adding torrent" + magnet_url);
-    for(auto& torrent : m_Item->torrents) {
-        if(torrent.magnet_uri == magnet_url) {
-            return;
-        }
-    }
 
-	m_TorrentHandler.AddTorrent(magnet_url, file_path);
-	m_Item->torrents.push_back({magnet_url, file_path});
+    DataContainer::add_torrent(hash, magnet_url, file_path);
 }
 
 void TTItemWindow::add_torrent_row() {
@@ -167,9 +162,10 @@ void TTItemWindow::add_torrent_row() {
         names.insert(row->get_value(m_Columns.m_col_name));
     }
 
+    auto group = DataContainer::get_group(hash);
     lt::torrent_status status;
     bool found;
-    for(auto& hl : m_TorrentHandler.m_Handles) {
+    for(auto& hl : group.second->m_Handles) {
         if(!hl.second.is_valid()) continue;
         auto stat = hl.second.status();
         if(names.find(stat.name) == names.end()) {
@@ -201,13 +197,7 @@ void TTItemWindow::remove_selected_rows(bool remove_files) {
 	if(!row) return;
 	unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
 	auto name = row->get_value(m_Columns.m_col_name);
-	m_TorrentHandler.RemoveTorrent(name, remove_files);
-
-	if(remove_files) {
-		ResourceManager::delete_file(name);
-	}
-
-	m_Item->torrents.erase(m_Item->torrents.begin() + id);
+    DataContainer::remove_torrent(hash, name, id, remove_files);
 	m_refTreeModel->erase(row);
 	auto children = m_refTreeModel->children();
 	for(int i = 1; i <= children.size(); i++) {
@@ -218,8 +208,9 @@ void TTItemWindow::remove_selected_rows(bool remove_files) {
 TTItemWindow::~TTItemWindow() {
 	delete m_Dialog;
 	delete m_RemoveDialog;
-	m_TorrentHandler.unsubscribe(subscription);
-	m_TorrentHandler.unsubscribe_from_added(subscription_for_added);
+	auto group = DataContainer::get_group(hash);
+	group.second->unsubscribe(subscription);
+	group.second->unsubscribe_from_added(subscription_for_added);
 }
 
 void TTItemWindow::on_button_add() {
@@ -242,7 +233,8 @@ bool TTItemWindow::on_row_pressed(GdkEventButton *ev) {
 		auto row = selection->get_selected();
 		if(!row) return false;
 		unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
-		auto path = m_Item->torrents[id].file_path;
+		auto group = DataContainer::get_group(hash);
+		auto path = group.first->torrents[id].file_path;
 #if defined(WIN32) || defined(WIN64)
 		auto pidl = ILCreateFromPath(ResourceManager::create_path(path, row->get_value(m_Columns.m_col_name)).c_str());
 		if(pidl) {
@@ -270,7 +262,8 @@ void TTItemWindow::on_start_torrent() {
 	if(!selection) return;
 	auto row = selection->get_selected();
 	if(!row) return;
-	auto handle = m_TorrentHandler.m_Handles[row->get_value(m_Columns.m_col_name)];
+	auto group = DataContainer::get_group(hash);
+	auto handle = group.second->m_Handles[row->get_value(m_Columns.m_col_name)];
     handle.set_flags(lt::torrent_flags::auto_managed);
 	handle.resume();
 }
@@ -281,7 +274,8 @@ void TTItemWindow::on_pause_torrent() {
 	if(!selection) return;
 	auto row = selection->get_selected();
 	if(!row) return;
-	auto handle = m_TorrentHandler.m_Handles[row->get_value(m_Columns.m_col_name)];
+    auto group = DataContainer::get_group(hash);
+    auto handle = group.second->m_Handles[row->get_value(m_Columns.m_col_name)];
 	handle.unset_flags(lt::torrent_flags::auto_managed);
 	handle.pause();
 }

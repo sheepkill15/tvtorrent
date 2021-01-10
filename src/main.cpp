@@ -5,6 +5,7 @@
 #include "settings_manager.h"
 #include "logger.h"
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include "container.h"
 
 #if defined(WIN32) || defined(WIN64)
 
@@ -269,6 +270,7 @@ int main(int argc, char *argv[]) {
     app = Gtk::Application::create("com.sheepkill15.tvtorrent",
                                    Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
     SettingsManager::init();
+    DataContainer::init();
 
     Logger::info("Application initialized");
 
@@ -291,7 +293,8 @@ int main(int argc, char *argv[]) {
     mine.detach();
     message_queue::remove("mq");
 #endif
-
+    Logger::cleanup();
+    DataContainer::cleanup();
     return result;
 }
 

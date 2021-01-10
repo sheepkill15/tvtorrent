@@ -24,10 +24,13 @@ public:
         Glib::ustring tvw;
         std::vector<size_t> feeds = {};
 
-        int internal_id;
+        size_t internal_id;
 
         bool operator== (const Filter& other) const {
             return internal_id == other.internal_id;
+        }
+        bool operator== (size_t i) const {
+            return internal_id == i;
         }
     };
 
@@ -45,8 +48,10 @@ public:
     struct {
         std::string title;
         std::string desc;
-        size_t hash;
+        const size_t hash;
     } channel_data;
+
+    bool operator==(size_t h) const;
 
 private:
     void periodic();

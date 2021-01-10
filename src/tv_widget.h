@@ -18,23 +18,16 @@ class TVWidget {
 public:
 	
 	TVWidget() = default;
-	TVWidget(const Glib::ustring& itemName, const Glib::ustring& imgPath, const Glib::ustring& default_path);
+	TVWidget(const Glib::ustring& itemName, const Glib::ustring& imgPath);
 	virtual ~TVWidget();
 
-	void init(const Glib::ustring& itemName, const Glib::ustring& imgPath, const Glib::ustring& default_path);
-	void SetupTorrents();
+	void init(const Glib::ustring& itemName, const Glib::ustring& imgPath);
 	void update();
 	void notify();
 
-	inline Glib::ustring GetName() const { return m_Item.name;  }
-
-	inline Glib::ustring GetImgPath() const { return m_Item.img_path; }
-
 	inline Gtk::Box& GetBox() { return *m_Box; }
 
-	inline TVItem& GetItem() { return m_Item; }
-	inline TorrentHandler& GetHandler() { return m_Handler; }
-
+    const size_t hash;
 private:
 	
 	Glib::RefPtr<Gtk::Builder> builder;
@@ -47,17 +40,12 @@ private:
 	Gtk::Label* DL_Speed{};
 	Gtk::ProgressBar* Progress{};
 
-	TVItem m_Item;
-
-	TorrentHandler m_Handler;
-
-	std::thread* first{};
 	Glib::Dispatcher m_Dispatcher;
 
 	const int desiredWidth = 180;
 	const int desiredHeight = 480;
 
-	int subscription{};
+    int subscription{};
 };
 
 

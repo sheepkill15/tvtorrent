@@ -16,7 +16,7 @@ class TTMainWindow;
 
 class TTFeedControlWindow {
 public:
-    explicit TTFeedControlWindow(TTMainWindow* parent);
+    explicit TTFeedControlWindow();
     ~TTFeedControlWindow();
 
 private:
