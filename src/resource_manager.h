@@ -22,7 +22,7 @@ public:
 
     static std::string get_torrent_save_dir(bool delim = false);
 
-private:
+    static std::string create_path(const std::string& fld, std::string flnm);
 
 };
 

@@ -16,6 +16,8 @@
 
 #if defined(WIN32) || defined(WIN64)
 #include <shellapi.h>
+#include <shlobj.h>
+
 #endif
 
 TTItemWindow::TTItemWindow(TVWidget& item) 
@@ -242,7 +244,13 @@ bool TTItemWindow::on_row_pressed(GdkEventButton *ev) {
 		unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
 		auto path = m_Item->torrents[id].file_path;
 #if defined(WIN32) || defined(WIN64)
-    ShellExecuteA(nullptr, "open", path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		auto pidl = ILCreateFromPath(ResourceManager::create_path(path, row->get_value(m_Columns.m_col_name)).c_str());
+		if(pidl) {
+		    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+		    SHOpenFolderAndSelectItems(pidl, 0, nullptr, 0);
+		    ILFree(pidl);
+		}
+    //ShellExecuteA(nullptr, "open", path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 #else
 		GError *error = nullptr;
 		if(!g_app_info_launch_default_for_uri(Glib::ustring::format("file:///", path).c_str()

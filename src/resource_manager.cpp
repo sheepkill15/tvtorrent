@@ -183,3 +183,7 @@ Glib::ustring ResourceManager::get_save_path(const Glib::ustring &name) {
     return Glib::ustring::format(SAVE_DIRECTORY, DELIM, name);
 }
 
+std::string ResourceManager::create_path(const std::string& fld, std::string flnm) {
+    return fld + DELIM + flnm;
+}
+
