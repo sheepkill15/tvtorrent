@@ -21,7 +21,8 @@
     <property name="type-hint">dialog</property>
     <property name="message-type">other</property>
     <property name="buttons">ok-cancel</property>
-    <property name="text" translatable="yes">Add an item</property>
+    <property name="text" translatable="yes">Add a group</property>
+    <property name="secondary-text" translatable="yes">You're going to organize your downloads into these</property>
     <child internal-child="vbox">
       <object class="GtkBox">
         <property name="can-focus">False</property>
@@ -46,7 +47,7 @@
             <property name="can-focus">False</property>
             <property name="xpad">4</property>
             <property name="ypad">4</property>
-            <property name="label" translatable="yes">Name of item</property>
+            <property name="label" translatable="yes">Name of group</property>
             <property name="xalign">0</property>
           </object>
           <packing>
@@ -62,7 +63,7 @@
             <property name="margin-start">4</property>
             <property name="margin-end">4</property>
             <property name="primary-icon-name">dialog-information</property>
-            <property name="placeholder-text" translatable="yes">Name of item</property>
+            <property name="placeholder-text" translatable="yes">Name of group</property>
             <property name="input-purpose">name</property>
           </object>
           <packing>
@@ -77,7 +78,7 @@
             <property name="can-focus">False</property>
             <property name="xpad">4</property>
             <property name="ypad">4</property>
-            <property name="label" translatable="yes">Item picture path</property>
+            <property name="label" translatable="yes">Group picture path (not required)</property>
             <property name="xalign">0</property>
           </object>
           <packing>

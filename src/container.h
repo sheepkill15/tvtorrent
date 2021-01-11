@@ -39,6 +39,8 @@ public:
     inline static const std::vector<std::string>& get_downloaded()  { return m_Downloaded; };
     inline static const std::unordered_map<TVItem*, TorrentHandler*>& get_groups() { return m_Groups; }
 
+    static Feed* get_feed(size_t first);
+
 private:
     inline static std::vector<Feed*> m_Feeds{};
     inline static std::vector<std::string> m_Downloaded{};

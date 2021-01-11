@@ -6,11 +6,11 @@
 #include "resource_manager.h"
 #include "main_window.h"
 #include "macros.h"
-#include "hash.h"
 #include "logger.h"
 #include "container.h"
 
 TTFeedControlWindow::TTFeedControlWindow()
+    : m_Dispatcher()
 {
     Logger::watcher w("Initializing Feed control window!");
     auto builder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_feedcontrol.glade"));
@@ -25,6 +25,8 @@ TTFeedControlWindow::TTFeedControlWindow()
     download_name->ON_CHANGE(&TTFeedControlWindow::on_dl_changed);
     ver_pattern->ON_CHANGE(&TTFeedControlWindow::on_vp_changed);
     tvw_chooser->ON_CHANGE(&TTFeedControlWindow::on_tvw_changed);
+
+    m_Dispatcher.ON_DISPATCH(&TTFeedControlWindow::notify_feed_changed);
 
     builder->get_widget("FilterList", filter_list);
     filter_list->ON_ROW_SELECTED(&TTFeedControlWindow::on_filter_activate);
@@ -48,6 +50,7 @@ TTFeedControlWindow::TTFeedControlWindow()
         feed_list_item->ON_CLICK_BIND(&TTFeedControlWindow::on_feed_list_item_click, Gtk::CheckButton*), feed_list_item));
         m_Feeds.push_back(feed_list_item);
         feed_list->append(*feed_list_item);
+        m_Subscriptions.insert(std::make_pair(feed->channel_data.hash, feed->subscribe([this] { m_Dispatcher.emit(); })));
     }
 
     builder->get_widget("ResultList", result_list);
@@ -78,6 +81,10 @@ TTFeedControlWindow::~TTFeedControlWindow() {
 
         Feed::Filter* filter = DataContainer::get_filters()[i];
         filter->id = reinterpret_cast<Gtk::Entry*>(filter_list->get_row_at_index(i)->get_child())->get_text();
+    }
+
+    for(auto& pair : m_Subscriptions) {
+        DataContainer::get_feed(pair.first)->unsubscribe(pair.second);
     }
 
     delete window;
@@ -130,7 +137,9 @@ void TTFeedControlWindow::on_add_feed() {
             DataContainer::add_feed(feedurl->get_text());
 
             auto feed_list_item = Gtk::make_managed<Gtk::CheckButton>(DataContainer::get_feeds().back()->channel_data.title);
-            feed_list_item->set_data("feed", reinterpret_cast<void *>(DataContainer::get_feeds().back()));
+            auto feed = DataContainer::get_feeds().back();
+            feed_list_item->set_data("feed", reinterpret_cast<void *>(feed));
+            m_Subscriptions.insert(std::make_pair(feed->channel_data.hash, feed->subscribe([this] { TTFeedControlWindow::notify_feed_changed(); })));
             m_Feeds.push_back(feed_list_item);
             feed_list_item->ON_CLICK_BIND(&TTFeedControlWindow::on_feed_list_item_click, Gtk::CheckButton*), feed_list_item));
 
@@ -170,7 +179,8 @@ void TTFeedControlWindow::on_remove_feed() {
             auto subsel = selected.substr(nyit + 1, zar - nyit - 1);
             size_t hash = std::stoul(subsel);
             DataContainer::remove_feed(hash);
-            UpdateFeeds(hash);
+            UpdateFeeds(cbt->get_active_row_number());
+            m_Subscriptions.erase(hash);
             break;
         }
         case Gtk::RESPONSE_CANCEL:
@@ -300,19 +310,20 @@ void TTFeedControlWindow::update_results() {
     result_list->show_all_children();
 }
 
-bool TTFeedControlWindow::on_filter_pressed(GdkEventButton* ev, Gtk::ListBoxRow* row) {
+bool TTFeedControlWindow::on_filter_pressed(GdkEventButton* _, Gtk::ListBoxRow* row) {
     filter_list->select_row(*row);
     return true;
 }
 
-void TTFeedControlWindow::UpdateFeeds(size_t hash) {
-    int i = 0;
+void TTFeedControlWindow::UpdateFeeds(size_t index) {
+    feed_list->remove(*feed_list->get_row_at_index(index));
+}
+
+void TTFeedControlWindow::notify_feed_changed() {
     for(auto entry : m_Feeds) {
-        size_t id = static_cast<Feed*>(entry->get_data("feed"))->channel_data.hash;
-        if(id == hash) {
-            feed_list->remove(*feed_list->get_row_at_index(i));
-            break;
-        }
-        i++;
+        Feed* feed = static_cast<Feed*>(entry->get_data("feed"));
+        if(feed == nullptr) continue;
+        entry->set_label(feed->channel_data.title);
     }
+    update_results();
 }

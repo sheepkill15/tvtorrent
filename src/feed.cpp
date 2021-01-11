@@ -49,43 +49,51 @@ void Feed::periodic() {
 }
 
 void Feed::parse_feed() {
-    buffer.clear();
-    curl = curl_easy_init();
-    if(curl) {
-		curl_easy_setopt(curl, CURLOPT_URL, RSS_URL.c_str());
-		curl_easy_setopt(curl, CURLOPT_HEADER, 0);
-		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0); /* Don't follow anything else than the particular url requested*/
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &Feed::writer);	/* Function Pointer "writer" manages the required buffer size */
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer ); /* Data Pointer &buffer stores downloaded web content */
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-	} else {
-        return;
-	}
-	curl_easy_perform(curl);
-	curl_easy_cleanup(curl);
-    doc.clear();
-    try {
-	    doc.parse<0>(buffer.data());
-    } catch(rapidxml::parse_error& er) {
-        Logger::info(er.what());
-        return;
-    }
-    auto root = doc.first_node();
-    if(std::string(root->name()) != "rss") return;
-    auto channel = root->first_node("channel");
+    {
+        buffer.clear();
+        curl = curl_easy_init();
+        if (curl) {
+            curl_easy_setopt(curl, CURLOPT_URL, RSS_URL.c_str());
+            curl_easy_setopt(curl, CURLOPT_HEADER, 0);
+            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION,
+                             0); /* Don't follow anything else than the particular url requested*/
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+                             &Feed::writer);    /* Function Pointer "writer" manages the required buffer size */
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer); /* Data Pointer &buffer stores downloaded web content */
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+        } else {
+            return;
+        }
+        curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+        doc.clear();
+        try {
+            doc.parse<0>(buffer.data());
+        } catch (rapidxml::parse_error &er) {
+            Logger::info(er.what());
+            return;
+        }
+        auto root = doc.first_node();
+        if (std::string(root->name()) != "rss") return;
+        auto channel = root->first_node("channel");
 
-    auto title = channel->first_node("title");
-    auto desc = channel->first_node("description");
-    channel_data.title = title->value();
-    auto pos = RSS_URL.find("rss");
-    if(pos != std::string::npos && pos < RSS_URL.size() - 4) {
-        channel_data.title += " (" + RSS_URL.substr(pos + 4) + ")";
+        auto title = channel->first_node("title");
+        auto desc = channel->first_node("description");
+        channel_data.title = title->value();
+        auto pos = RSS_URL.find("rss");
+        if (pos != std::string::npos && pos < RSS_URL.size() - 4) {
+            channel_data.title += " (" + RSS_URL.substr(pos + 4) + ")";
+        }
+
+        channel_data.desc = desc->value();
+        m_Items.clear();
+        for (auto child = channel->first_node("item"); child != nullptr; child = child->next_sibling("item")) {
+            parse_item(child);
+        }
     }
 
-    channel_data.desc = desc->value();
-    m_Items.clear();
-    for(auto child = channel->first_node("item"); child != nullptr; child = child->next_sibling("item")) {
-        parse_item(child);
+    for(auto& sb : m_Subscriptions) {
+        sb.second();
     }
 
 //    for(auto& item : m_Items) {
@@ -121,4 +129,13 @@ void Feed::parse_item (rapidxml::xml_node<>* child) {
 
 bool Feed::operator==(size_t h) const {
     return channel_data.hash == h;
+}
+
+size_t Feed::subscribe(const std::function<void()>& sbc) {
+    m_Subscriptions.insert(std::make_pair(subscriptions++, sbc));
+    return subscriptions - 1;
+}
+
+void Feed::unsubscribe(size_t subscription) {
+    m_Subscriptions.erase(subscription);
 }

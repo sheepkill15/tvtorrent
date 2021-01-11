@@ -10,6 +10,7 @@
 #include <gtkmm/entry.h>
 #include <gtkmm/comboboxtext.h>
 #include <gtkmm/checkbutton.h>
+#include <glibmm/dispatcher.h>
 #include "feed.h"
 
 class TTMainWindow;
@@ -18,6 +19,8 @@ class TTFeedControlWindow {
 public:
     explicit TTFeedControlWindow();
     ~TTFeedControlWindow();
+
+    void notify_feed_changed();
 
 private:
 
@@ -34,15 +37,14 @@ private:
     void on_tvw_changed();
 
     Feed::Filter* selected_filter{};
-
-    TTMainWindow* parent;
-
     Gtk::ListBox* filter_list{};
     Gtk::ListBox* feed_list{};
     Gtk::ListBox* result_list{};
     Gtk::Entry* download_name{};
     Gtk::Entry* ver_pattern{};
     Gtk::ComboBoxText* tvw_chooser{};
+
+    Glib::Dispatcher m_Dispatcher;
 
     Gtk::Window* window = nullptr;
 
@@ -52,6 +54,7 @@ private:
     void update_results();
 
     std::vector<Gtk::CheckButton*> m_Feeds;
+    std::unordered_map<size_t, size_t> m_Subscriptions;
 
     void UpdateFeeds(size_t);
 };

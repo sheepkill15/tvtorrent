@@ -16,6 +16,8 @@
 namespace {
     Glib::RefPtr<Gtk::Application> app;
     TTMainWindow *main_window;
+    Glib::Dispatcher delayed_window_creater;
+    Glib::Dispatcher delayed_notifier;
     int on_command_line(const Glib::RefPtr<Gio::ApplicationCommandLine> &command_line,
                         Glib::RefPtr<Gtk::Application> &appPtr) {
         appPtr->activate(); // Without activate() the window won't be shown.
@@ -25,6 +27,7 @@ namespace {
 
     bool should_work = true;
     using namespace boost::interprocess;
+    std::string last_message;
     void check_for_ipc_message() {
 
         message_queue mq(open_or_create, "mq", 20, sizeof(char) * 500);
@@ -40,10 +43,12 @@ namespace {
                     buffer.resize(recvd_size / sizeof(char));
                     Logger::info(std::string("Received: ") + std::to_string(recvd_size) + ": " + buffer);
                     if(recvd_size <= 10) {
-                        main_window->just_show();
+                        delayed_window_creater.emit();
                     }
-                    else
-                        main_window->notify(buffer);
+                    else {
+                        last_message = buffer;
+                        delayed_notifier.emit();
+                    }
                 }
             } catch (interprocess_exception &er) {
                 Logger::error(er.what());
@@ -66,6 +71,11 @@ namespace {
             main_window = nullptr;
         }
         app->release();
+    }
+
+    void NotifyDialog() {
+        OpenWindow();
+        main_window->notify(last_message);
     }
 
     bool held = false;
@@ -152,6 +162,8 @@ int main(int argc, char *argv[]) {
                                    Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
     SettingsManager::init();
     DataContainer::init();
+    delayed_window_creater.connect(sigc::ptr_fun(&OpenWindow));
+    delayed_notifier.connect(sigc::ptr_fun(&NotifyDialog));
 
     Logger::info("Application initialized");
 
@@ -161,7 +173,8 @@ int main(int argc, char *argv[]) {
 
     if (argc == 2) {
         Logger::info(std::string("Received external uri: ") + argv[1]);
-        main_window->external_torrent(argv[1]);
+        last_message = argv[1];
+        delayed_notifier.emit();
     }
     app->signal_command_line().connect(sigc::bind(sigc::ptr_fun(&on_command_line), app), false);
     main_window->signal_hide().connect(sigc::ptr_fun(&ask_for_confirmation));

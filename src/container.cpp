@@ -184,3 +184,12 @@ void DataContainer::remove_torrent(size_t hash, const std::string& name, int ind
 
     group.first->torrents.erase(group.first->torrents.begin() + index);
 }
+
+Feed* DataContainer::get_feed(size_t first) {
+    for(auto feed : m_Feeds) {
+        if(*feed == first) {
+            return feed;
+        }
+    }
+    return nullptr;
+}

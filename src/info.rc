@@ -1,6 +1,6 @@
 1 VERSIONINFO
-FILEVERSION     1,2,0,0
-PRODUCTVERSION  1,2,0,0
+FILEVERSION     1,4,0,0
+PRODUCTVERSION  1,4,0,0
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
@@ -8,12 +8,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "SandDunes"
       VALUE "FileDescription", "TVTorrent - libTorrent client"
-      VALUE "FileVersion", "1.2"
+      VALUE "FileVersion", "1.4"
       VALUE "InternalName", "TVTorrent - a simple and light libTorrent client"
       VALUE "LegalCopyright", "Simon Aron"
       VALUE "OriginalFilename", "TVTorrent"
       VALUE "ProductName", "TVTorrent"
-      VALUE "ProductVersion", "1.2"
+      VALUE "ProductVersion", "1.4"
     END
   END
   BLOCK "VarFileInfo"

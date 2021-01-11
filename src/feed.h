@@ -8,6 +8,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <functional>
 #include <glibmm/ustring.h>
 class Feed {
 public:
@@ -37,6 +38,8 @@ public:
     explicit Feed(std::string );
     ~Feed();
     void parse_feed();
+    size_t subscribe(const std::function<void()>&);
+    void unsubscribe(size_t subscription);
 
     static size_t writer(char *data, size_t size, size_t nmemb, std::string *buffer);
 
@@ -54,6 +57,10 @@ public:
     bool operator==(size_t h) const;
 
 private:
+
+    size_t subscriptions = 0;
+    std::unordered_map<size_t, std::function<void()>> m_Subscriptions;
+
     void periodic();
     void parse_item(rapidxml::xml_node<char>*);
 
