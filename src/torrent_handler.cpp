@@ -56,23 +56,23 @@ TorrentHandler::TorrentHandler() {
 }
 
 TorrentHandler::~TorrentHandler() {
-    std::lock_guard<std::mutex> lock(m_Mutex);
+    //std::lock_guard<std::mutex> lock(m_Mutex);
 
     signal_stop();
     own_work.detach();
-    if(own_work.joinable()) {
-        own_work.join();
-    }
+//    if(own_work.joinable()) {
+//        own_work.join();
+//    }
 
-    for (auto &pair : m_Handles) {
-        if(pair.second.is_valid())
-            _ses.remove_torrent(pair.second);
-    }
-    for (auto &pair : m_Threads) {
-        pair.second.detach();
-    }
-    m_Threads.clear();
-    m_Handles.clear();
+//    for (auto &pair : m_Handles) {
+//        if(pair.second.is_valid())
+//            _ses.remove_torrent(pair.second);
+//    }
+//    for (auto &pair : m_Threads) {
+//        pair.second.detach();
+//    }
+//    m_Threads.clear();
+//    m_Handles.clear();
 }
 
 void TorrentHandler::AddTorrent(const std::string &url, const std::string &file_path) {

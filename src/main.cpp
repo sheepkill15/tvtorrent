@@ -169,10 +169,10 @@ int main(int argc, char *argv[]) {
     int result = app->run(*main_window);
     if(main_window != nullptr)
         delete main_window;
-    delete_icon();
     should_work = false;
     mine.detach();
     message_queue::remove("mq");
+    delete_icon();
     DataContainer::cleanup();
     Logger::cleanup();
     return result;

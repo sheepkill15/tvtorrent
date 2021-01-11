@@ -60,6 +60,31 @@ void ShowNotification(const std::string &text) {
     Logger::info("Submitted notification");
 }
 
+void delete_icon() {
+    Shell_NotifyIcon(NIM_DELETE, &nid);
+}
+
+WINBOOL terminate_handler(DWORD signal) {
+    //message_queue::remove("mq");
+    Logger::info(std::string("Caught termination signal: ") + std::to_string(signal));
+    delete_icon();
+    // DataContainer::cleanup();
+
+    ResourceManager::create_torrent_save(DataContainer::get_groups());
+
+    std::vector<Glib::ustring> feeds;
+    for(auto feed : DataContainer::get_feeds()) {
+        feeds.emplace_back(feed->GetUrl());
+    }
+
+    ResourceManager::create_feed_save(feeds, DataContainer::get_filters(), DataContainer::get_downloaded());
+
+    SettingsManager::save();
+
+    Logger::cleanup();
+    return TRUE;
+}
+
 void SetupNotificationIcon() {
     Logger::info("Trying to create notification icon");
 
@@ -122,15 +147,13 @@ void SetupNotificationIcon() {
     if (succ)
         Logger::info("Created notification icon");
     else Logger::error("Failed to create notification icon");
+
+    SetConsoleCtrlHandler(terminate_handler, TRUE);
 }
 
 bool check_for_running_process() {
     HANDLE h = CreateMutex(nullptr, FALSE, "tvtorrent");
     return h != nullptr && (GetLastError() == ERROR_ALREADY_EXISTS);
-}
-
-void delete_icon() {
-    Shell_NotifyIcon(NIM_DELETE, &nid);
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
