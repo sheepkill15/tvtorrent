@@ -17,12 +17,19 @@ TTSettingsWindow::TTSettingsWindow(TTMainWindow* caller)
 
     builder->get_widget("DL", dl);
     builder->get_widget("UL", ul);
+    builder->get_widget("ThemeSelect", theme_select);
 
     dl->set_text(Glib::ustring::format(SettingsManager::get_settings().dl_limit));
     ul->set_text(Glib::ustring::format(SettingsManager::get_settings().ul_limit));
 
+    for(int i = 0; i < SettingsManager::n_theme; i++) {
+        theme_select->append(SettingsManager::theme_to_string[i]);
+    }
+    theme_select->set_active(SettingsManager::get_settings().selected_theme);
+
     dl->ON_CHANGE(&TTSettingsWindow::on_dl_change);
     ul->ON_CHANGE(&TTSettingsWindow::on_ul_change);
+    theme_select->ON_CHANGE(&TTSettingsWindow::on_theme_change);
     window->show();
 }
 
@@ -40,4 +47,8 @@ void TTSettingsWindow::on_ul_change() {
     char* end;
     SettingsManager::get_settings().ul_limit = strtof(ul->get_text().c_str(), &end);
     parent->update_limits();
+}
+
+void TTSettingsWindow::on_theme_change() {
+    SettingsManager::get_settings().selected_theme = (SettingsManager::Theme)theme_select->get_active_row_number();
 }

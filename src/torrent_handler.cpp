@@ -56,13 +56,13 @@ TorrentHandler::TorrentHandler() {
 }
 
 TorrentHandler::~TorrentHandler() {
-    //std::lock_guard<std::mutex> lock(m_Mutex);
+    std::lock_guard<std::mutex> lock(m_Mutex);
 
     signal_stop();
     own_work.detach();
-//    if(own_work.joinable()) {
-//        own_work.join();
-//    }
+    if(own_work.joinable()) {
+        own_work.join();
+    }
 
     for (auto &pair : m_Handles) {
         if(pair.second.is_valid())

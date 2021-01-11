@@ -17,14 +17,16 @@ namespace {
     std::string SAVE_DIRECTORY;
     constexpr const char DELIM = '\\';
     std::string RESOURCE_DIRECTORY;
+    std::string LOCAL_APPDATA_SETTINGS;
 }
 
 void ResourceManager::init() {
 	SAVE_DIRECTORY = std::string(getenv("APPDATA")) + "\\TVTorrent";
+	LOCAL_APPDATA_SETTINGS = std::string(getenv("LOCALAPPDATA")) + "\\gtk-3.0";
 	if(std::filesystem::exists("res"))
 	    RESOURCE_DIRECTORY = "res";
-	else if(std::filesystem::exists("../res"))
-	    RESOURCE_DIRECTORY = "../res";
+	else if(std::filesystem::exists("..\\res"))
+	    RESOURCE_DIRECTORY = "..\\res";
 	else if(std::filesystem::exists(R"(C:\Program Files (x86)\TVTorrent\res)"))
 	    RESOURCE_DIRECTORY = R"(C:\Program Files (x86)\TVTorrent\res)";
     create_if_doesnt_exist(SAVE_DIRECTORY);
@@ -183,7 +185,11 @@ Glib::ustring ResourceManager::get_save_path(const Glib::ustring &name) {
     return Glib::ustring::format(SAVE_DIRECTORY, DELIM, name);
 }
 
-std::string ResourceManager::create_path(const std::string& fld, std::string flnm) {
+std::string ResourceManager::create_path(const std::string& fld, const std::string& flnm) {
     return fld + DELIM + flnm;
+}
+
+std::string ResourceManager::get_gtk_settings_path() {
+    return LOCAL_APPDATA_SETTINGS + DELIM + "settings.ini";
 }
 

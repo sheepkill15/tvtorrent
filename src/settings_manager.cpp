@@ -13,6 +13,7 @@ void SettingsManager::init() {
     m_Settings.dl_limit = -1;
     m_Settings.close_to_tray = false;
     m_Settings.should_ask_exit = true;
+    m_Settings.selected_theme = FlatRemix;
 
     Json::Value root;
     Json::CharReaderBuilder builder;
@@ -31,6 +32,9 @@ void SettingsManager::init() {
         m_Settings.close_to_tray = root["close_to_tray"].asBool();
         if(root.isMember("should_ask_exit"))
             m_Settings.should_ask_exit = root["should_ask_exit"].asBool();
+        if(root.isMember("selected_theme")) {
+            m_Settings.selected_theme = (Theme)root["selected_theme"].asInt();
+        }
     }
     settingsfile.close();
 
@@ -43,6 +47,7 @@ void SettingsManager::save() {
     value["ul_limit"] = m_Settings.ul_limit;
     value["close_to_tray"] = m_Settings.close_to_tray;
     value["should_ask_exit"] = m_Settings.should_ask_exit;
+    value["selected_theme"] = m_Settings.selected_theme;
 
     Json::StreamWriterBuilder builder;
     builder["indentation"] = "\t";
@@ -52,4 +57,23 @@ void SettingsManager::save() {
     std::ofstream of(path, std::ios::out | std::ios::trunc);
     of << document;
     of.close();
+
+    path = ResourceManager::get_gtk_settings_path();
+    Logger::info(path);
+    std::ifstream gtk_s_file(path);
+    if(gtk_s_file.fail()) return;
+    std::string newfile;
+    std::string temp;
+    while(getline(gtk_s_file, temp)) {
+        if(temp.find("gtk-theme-name") != std::string::npos) {
+            temp = std::string("gtk-theme-name=") + theme_to_string[m_Settings.selected_theme];
+        }
+        temp += '\n';
+        newfile += temp;
+    }
+    gtk_s_file.close();
+    std::ofstream gtk_s_file_s(path);
+    if(gtk_s_file_s.fail()) return;
+    gtk_s_file_s << newfile;
+
 }

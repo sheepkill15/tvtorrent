@@ -7,6 +7,7 @@
 
 #include <gtkmm/window.h>
 #include <gtkmm/entry.h>
+#include <gtkmm/comboboxtext.h>
 
 class TTMainWindow;
 
@@ -20,9 +21,12 @@ private:
     TTMainWindow* parent;
     Gtk::Entry* dl = nullptr;
     Gtk::Entry* ul = nullptr;
+    Gtk::ComboBoxText* theme_select = nullptr;
 
     void on_dl_change();
     void on_ul_change();
+
+    void on_theme_change();
 };
 
 

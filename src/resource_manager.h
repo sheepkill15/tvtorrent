@@ -22,7 +22,9 @@ public:
 
     static std::string get_torrent_save_dir(bool delim = false);
 
-    static std::string create_path(const std::string& fld, std::string flnm);
+    static std::string create_path(const std::string& fld, const std::string& flnm);
+
+    static std::string get_gtk_settings_path();
 
 };
 
