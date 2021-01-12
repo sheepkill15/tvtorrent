@@ -10,10 +10,10 @@
 #include "feed_control_window.h"
 #include "logger.h"
 #include "container.h"
+#include "settings_manager.h"
 
-TTMainWindow::TTMainWindow(std::function<void(const std::string&)> notification_cb)
+TTMainWindow::TTMainWindow()
 	: tvw_list(),
-	notify_cb(std::move(notification_cb)),
 	m_Dispatcher()
 {
 	set_title("TVTorrent");
@@ -55,8 +55,6 @@ TTMainWindow::TTMainWindow(std::function<void(const std::string&)> notification_
 	show_all_children();
 	m_Dispatcher.ON_DISPATCH(&TTMainWindow::external_torrent_empty);
 	just_show_please.ON_DISPATCH(&TTMainWindow::show);
-
-    check = std::thread([this] {check_feeds();});
 }
 
 TTMainWindow::~TTMainWindow() {
@@ -64,9 +62,6 @@ TTMainWindow::~TTMainWindow() {
     for(auto tvw : tvw_list) {
         delete tvw;
     }
-
-	should_work = false;
-	check.detach();
 
 }
 
@@ -108,13 +103,11 @@ void TTMainWindow::external_torrent(char argv[]) {
 void TTMainWindow::add_item(const Glib::ustring& name, const Glib::ustring& img_path, const Glib::ustring& default_path) {
 
 	if(name.empty() || default_path.empty()) return;
+	DataContainer::add_group(name, img_path, default_path);
 
 	tvw_list.push_back(new TVWidget(name, img_path));
 	m_FlowBox.insert(tvw_list.back()->GetBox(), tvw_list.size() - 1);
 
-	DataContainer::add_group(name, img_path, default_path);
-
-    DataContainer::get_group(name).second->subscribe_for_completed([this](const lt::torrent_status& callback) {TTMainWindow::on_torrent_complete(callback);});
 	show_all_children();
 }
 
@@ -155,11 +148,9 @@ void TTMainWindow::on_button_remove() {
 	auto tvw = tvw_list[index];
 	m_FlowBox.remove(tvw->GetBox());
 	tvw_list.erase(tvw_list.begin() + index);
-
-	DataContainer::remove_group(tvw->hash);
-
-	delete tvw;
-
+    size_t hash = tvw->hash;
+    delete tvw;
+	DataContainer::remove_group(hash);
 
 }
 
@@ -204,107 +195,15 @@ void TTMainWindow::on_button_feeds() {
     }
     feed_control_window = new TTFeedControlWindow();
     feed_control_window->window->ON_HIDE(&TTMainWindow::on_feedcontrol_window_hide);
+    DataContainer::get_manager().pause();
 }
 
 void TTMainWindow::on_feedcontrol_window_hide() {
     delete feed_control_window;
     feed_control_window = nullptr;
-    refresh_check();
+    DataContainer::get_manager().resume();
+    DataContainer::get_manager().refresh_check();
 }
-
-namespace {
-    void ReplaceAll(std::string &str, const std::string& from, const std::string& to) {
-        size_t start_pos = 0;
-        while((start_pos = str.find(from, start_pos)) != std::string::npos) {
-            str.replace(start_pos, from.length(), to);
-            start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
-        }
-    }
-    size_t split(const std::string &txt, std::vector<std::string> &strs, char ch)
-    {
-        size_t pos = txt.find( ch );
-        size_t initialPos = 0;
-        strs.clear();
-
-        // Decompose statement
-        while( pos != std::string::npos ) {
-            strs.push_back( txt.substr( initialPos, pos - initialPos ) );
-            initialPos = pos + 1;
-
-            pos = txt.find( ch, initialPos );
-        }
-
-        // Add the last one
-        strs.push_back( txt.substr( initialPos, std::min( pos, txt.size() ) - initialPos + 1 ) );
-
-        return strs.size();
-    }
-}
-void TTMainWindow::check_feeds() {
-    should_work = true;
-    while(should_work) {
-        {
-            std::lock_guard<std::mutex> lock(m_Mutex);
-            if(feed_control_window != nullptr) goto skip;
-            for(auto& filter : DataContainer::get_filters()) {
-                if(filter->tvw.empty() || filter->name.empty()) continue;
-                std::string filter_processed = "\\b" + filter->ver_pattern;
-                ReplaceAll(filter_processed, "X", "[0-9]");
-                filter_processed += "\\b";
-                std::regex re(filter_processed);
-                std::vector<std::string> name_split;
-                split(filter->name, name_split, ' ');
-                for(auto& feed : DataContainer::get_feeds()) {
-                    for(auto& item : feed->GetItems()) {
-                        bool ok = true;
-                        for(auto& s : name_split) {
-                            if(item.title.find(s) == std::string::npos) {
-                                ok = false;
-                                break;
-                            }
-                        }
-                        if(ok) {
-                            std::smatch m;
-                            bool const matched = std::regex_search(item.title, m, re);
-                            if(matched) {
-                                bool const ifAlreadyDownloaded = check_if_already_downloaded(name_split, m);
-                                if(!ifAlreadyDownloaded) {
-                                    DataContainer::add_downloaded(item.title);
-                                    for(auto& group : DataContainer::get_groups()) {
-                                        if(group.first->name == filter->tvw) {
-                                            DataContainer::add_torrent(group.first->hash, item.link, group.first->default_save_path);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
-skip:
-
-        std::this_thread::sleep_for(std::chrono::minutes(5));
-    }
-}
-
-bool TTMainWindow::check_if_already_downloaded(const std::vector<std::string>& name, const std::smatch& m) {
-    for(auto& item : DataContainer::get_downloaded()) {
-        bool ok = true;
-        for(auto& s : name) {
-            if(item.find(s) == std::string::npos) {
-                ok = false;
-            }
-        }
-        if(ok && (m[0].str().empty() || item.find(m[0]) != std::string::npos)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void TTMainWindow::on_settings_window_hide() {
     delete settings_window;
     settings_window = nullptr;
@@ -315,19 +214,6 @@ void TTMainWindow::update_limits() {
         group.second->update_limits();
     }
 }
-
-void TTMainWindow::refresh_check() {
-    std::lock_guard<std::mutex> lock(m_Mutex);
-    should_work = false;
-    check.detach();
-
-    check = std::thread([this] {check_feeds();});
-}
-
-void TTMainWindow::on_torrent_complete(const lt::torrent_status& stat) {
-    notify_cb(stat.name + " finished downloading!");
-}
-
 void TTMainWindow::external_torrent_empty() {
     external_torrent(pending_uri.data());
 }
@@ -337,16 +223,10 @@ void TTMainWindow::notify(const std::string & uri) {
     m_Dispatcher.emit();
 }
 
-void TTMainWindow::just_show() {
-    just_show_please.emit();
-}
-
 void TTMainWindow::init_items() {
     for(auto& group : DataContainer::get_groups()) {
         tvw_list.push_back(new TVWidget(group.first->name, group.first->img_path));
         m_FlowBox.insert(tvw_list.back()->GetBox(), tvw_list.size() - 1);
-
-        group.second->subscribe_for_completed([this](const lt::torrent_status& stat) { TTMainWindow::on_torrent_complete(stat); });
     }
 }
 

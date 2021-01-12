@@ -18,18 +18,25 @@ TTSettingsWindow::TTSettingsWindow(TTMainWindow* caller)
     builder->get_widget("DL", dl);
     builder->get_widget("UL", ul);
     builder->get_widget("ThemeSelect", theme_select);
+    builder->get_widget("TFActionSelect", tf_action_select);
 
     dl->set_text(Glib::ustring::format(SettingsManager::get_settings().dl_limit));
     ul->set_text(Glib::ustring::format(SettingsManager::get_settings().ul_limit));
 
-    for(int i = 0; i < SettingsManager::n_theme; i++) {
-        theme_select->append(SettingsManager::theme_to_string[i]);
+    for(const auto & i : SettingsManager::theme_to_string) {
+        theme_select->append(i);
     }
     theme_select->set_active(SettingsManager::get_settings().selected_theme);
+
+    for(const auto& i : SettingsManager::tf_action_to_string) {
+        tf_action_select->append(i);
+    }
+    tf_action_select->set_active(SettingsManager::get_settings().on_torrent_finish);
 
     dl->ON_CHANGE(&TTSettingsWindow::on_dl_change);
     ul->ON_CHANGE(&TTSettingsWindow::on_ul_change);
     theme_select->ON_CHANGE(&TTSettingsWindow::on_theme_change);
+    tf_action_select->ON_CHANGE(&TTSettingsWindow::on_tf_action_change);
     window->show();
 }
 
@@ -51,4 +58,8 @@ void TTSettingsWindow::on_ul_change() {
 
 void TTSettingsWindow::on_theme_change() {
     SettingsManager::get_settings().selected_theme = (SettingsManager::Theme)theme_select->get_active_row_number();
+}
+
+void TTSettingsWindow::on_tf_action_change() {
+    SettingsManager::get_settings().on_torrent_finish = (SettingsManager::TorrentFinishAction)tf_action_select->get_active_row_number();
 }

@@ -13,7 +13,7 @@ class TTMainWindow;
 
 class TTSettingsWindow {
 public:
-    TTSettingsWindow(TTMainWindow* caller);
+    explicit TTSettingsWindow(TTMainWindow* caller);
     ~TTSettingsWindow();
 
     Gtk::Window* window = nullptr;
@@ -22,11 +22,13 @@ private:
     Gtk::Entry* dl = nullptr;
     Gtk::Entry* ul = nullptr;
     Gtk::ComboBoxText* theme_select = nullptr;
+    Gtk::ComboBoxText* tf_action_select = nullptr;
 
     void on_dl_change();
     void on_ul_change();
 
     void on_theme_change();
+    void on_tf_action_change();
 };
 
 

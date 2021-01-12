@@ -11,6 +11,7 @@
 #include "feed.h"
 #include "tv_item.h"
 #include "torrent_handler.h"
+#include "data_manager.h"
 
 class DataContainer {
 public:
@@ -33,6 +34,7 @@ public:
     static void remove_filter(size_t id);
     static void remove_group(size_t hash);
     static void remove_torrent(size_t hash, const std::string&, int index, bool remove_files = false);
+    static void remove_torrent(const std::string&, bool remove_files = false);
 
     inline static const std::vector<Feed*>& get_feeds()  { return m_Feeds; };
     inline static const std::vector<Feed::Filter*>& get_filters()  { return m_Filters; };
@@ -41,6 +43,8 @@ public:
 
     static Feed* get_feed(size_t first);
 
+    inline static DataManager& get_manager() { return *m_Manager; };
+
 private:
     inline static std::vector<Feed*> m_Feeds{};
     inline static std::vector<std::string> m_Downloaded{};
@@ -48,6 +52,8 @@ private:
     inline static std::unordered_map<TVItem*, TorrentHandler*> m_Groups{};
 
     inline static size_t m_FilterId = 0;
+
+    inline static DataManager* m_Manager{};
 };
 
 

@@ -58,7 +58,7 @@ namespace {
     }
     void OpenWindow() {
         if(main_window == nullptr ){
-            main_window = new TTMainWindow(ShowNotification);
+            main_window = new TTMainWindow();
         }
         main_window->show();
         //app->release();
@@ -70,6 +70,10 @@ namespace {
             delete main_window;
             main_window = nullptr;
         }
+    }
+
+    void CloseWindow() {
+        HideWindow();
         app->release();
     }
 
@@ -87,8 +91,9 @@ namespace {
                     app->hold();
                     held = true;
                 }
-            } else {
                 HideWindow();
+            } else {
+                CloseWindow();
             }
             return;
         }
@@ -116,7 +121,7 @@ namespace {
             default:
                 SettingsManager::get_settings().should_ask_exit = !ask_again->get_active();
                 SettingsManager::get_settings().close_to_tray = false;
-                HideWindow();
+                CloseWindow();
                 break;
         }
 
@@ -131,7 +136,7 @@ int main(int argc, char *argv[]) {
     ResourceManager::init();
     Logger::init();
     show_window = OpenWindow;
-    hide_window = HideWindow;
+    hide_window = CloseWindow;
     try {
         bool already_running = check_for_running_process();
         Logger::info("Checking for already running processes");
@@ -162,12 +167,13 @@ int main(int argc, char *argv[]) {
                                    Gio::APPLICATION_HANDLES_COMMAND_LINE | Gio::APPLICATION_HANDLES_OPEN);
     SettingsManager::init();
     DataContainer::init();
+    DataContainer::get_manager().set_notify_callback(ShowNotification);
     delayed_window_creater.connect(sigc::ptr_fun(&OpenWindow));
     delayed_notifier.connect(sigc::ptr_fun(&NotifyDialog));
 
     Logger::info("Application initialized");
 
-    main_window = new TTMainWindow(ShowNotification);
+    main_window = new TTMainWindow();
 
     Logger::info("Main window initialized");
 

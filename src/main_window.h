@@ -22,13 +22,12 @@ class TTFeedControlWindow;
 class TTMainWindow : public Gtk::Window {
 
 public:
-	explicit TTMainWindow(std::function<void(const std::string&)>);
+	explicit TTMainWindow();
 	~TTMainWindow() override;
 
 	static void external_torrent(char argv[]);
 	void external_torrent_empty();
 	void notify(const std::string&);
-	void just_show();
     void update_limits();
 
     std::vector<TVWidget*> tvw_list;
@@ -44,18 +43,8 @@ protected:
 	void on_feedcontrol_window_hide();
 	void on_settings_window_hide();
 
-	void on_torrent_complete(const lt::torrent_status&);
-
 	void add_item(const Glib::ustring& name, const Glib::ustring& img_path, const Glib::ustring& default_path);
 	void init_items();
-
-	void refresh_check();
-	void check_feeds();
-	static bool check_if_already_downloaded(const std::vector<std::string>&, const std::smatch&);
-
-	std::thread check;
-    mutable std::mutex m_Mutex;
-    bool should_work{};
 
 	Gtk::FlowBox m_FlowBox;
 	Gtk::ScrolledWindow m_ScrolledWindow;
@@ -65,8 +54,6 @@ protected:
 
     TTFeedControlWindow* feed_control_window = nullptr;
     TTSettingsWindow* settings_window = nullptr;
-
-    std::function<void(const std::string&)> notify_cb;
 
     Glib::Dispatcher m_Dispatcher;
     std::string pending_uri;

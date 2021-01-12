@@ -15,19 +15,19 @@ class TorrentHandler {
 		virtual ~TorrentHandler();
 
 		void AddTorrent(const std::string& url, const std::string& file_path);
-		void RemoveTorrent(const std::string& name, bool);
+		void RemoveTorrent(size_t, bool);
 		void do_work();
 		void signal_stop();
         void update_limits();
 		int subscribe(const std::function<void()>& callback);
 		int subscribe_for_added(const std::function<void()>& callback);
-		void subscribe_for_completed(const std::function<void(const lt::torrent_status&)>& callback);
+		void subscribe_for_completed(const std::function<void(const lt::torrent_handle&)>& callback);
 		void unsubscribe(int id);
 		void unsubscribe_from_added(int id);
 
 		static std::string state(const lt::torrent_status& status);
 
-		std::unordered_map<std::string, lt::torrent_handle> m_Handles;
+		std::unordered_map<size_t, lt::torrent_handle> m_Handles;
 	private:
         size_t sub_count = 0;
         size_t thread_count = 0;
@@ -38,7 +38,7 @@ class TorrentHandler {
 
 		std::unordered_map<int, std::function<void()>> m_Callbacks;
 		std::unordered_map<int, std::function<void()>> m_AddedCallbacks;
-		std::vector<std::function<void(const lt::torrent_status&)>> m_CompletedCallbacks;
+		std::vector<std::function<void(const lt::torrent_handle&)>> m_CompletedCallbacks;
 		std::unordered_map<int, std::thread> m_Threads;
 
 		mutable std::mutex m_Mutex;

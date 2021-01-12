@@ -12,6 +12,10 @@ public:
     Unique() = delete;
     ~Unique() = default;
     inline static size_t from_string(const std::string& myString) {
+//        auto found = m_Cache.find(myString);
+//        if(found != m_Cache.end()) {
+//            return found->second;
+//        }
         size_t randomizer = 100;
         for (char i : myString)
         {
@@ -20,8 +24,13 @@ public:
         randomizer += myString.size() * myString[0];
         randomizer += myString.back();
         randomizer *= myString.back();
+
+        //m_Cache.insert(std::make_pair(myString, randomizer));
         return randomizer;
     }
+private:
+    /// Caching
+    //inline static std::unordered_map<std::string, size_t> m_Cache;
 };
 
 #endif //TVTORRENT_HASH_H

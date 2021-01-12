@@ -14,6 +14,7 @@ void SettingsManager::init() {
     m_Settings.close_to_tray = false;
     m_Settings.should_ask_exit = true;
     m_Settings.selected_theme = FlatRemix;
+    m_Settings.on_torrent_finish = Nothing;
 
     Json::Value root;
     Json::CharReaderBuilder builder;
@@ -35,9 +36,11 @@ void SettingsManager::init() {
         if(root.isMember("selected_theme")) {
             m_Settings.selected_theme = (Theme)root["selected_theme"].asInt();
         }
+        if(root.isMember("on_torrent_finish")) {
+            m_Settings.on_torrent_finish = (TorrentFinishAction)root["on_torrent_finish"].asInt();
+        }
     }
     settingsfile.close();
-
 }
 
 void SettingsManager::save() {
@@ -48,6 +51,7 @@ void SettingsManager::save() {
     value["close_to_tray"] = m_Settings.close_to_tray;
     value["should_ask_exit"] = m_Settings.should_ask_exit;
     value["selected_theme"] = m_Settings.selected_theme;
+    value["on_torrent_finish"] = m_Settings.on_torrent_finish;
 
     Json::StreamWriterBuilder builder;
     builder["indentation"] = "\t";

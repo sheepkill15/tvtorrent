@@ -56,7 +56,7 @@ TorrentHandler::TorrentHandler() {
 }
 
 TorrentHandler::~TorrentHandler() {
-    //std::lock_guard<std::mutex> lock(m_Mutex);
+    std::lock_guard<std::mutex> lock(m_Mutex);
 
     signal_stop();
     own_work.detach();
@@ -83,11 +83,11 @@ void TorrentHandler::AddTorrent(const std::string &url, const std::string &file_
     thread_count++;
 }
 
-void TorrentHandler::RemoveTorrent(const std::string &name, bool remove_files) {
+void TorrentHandler::RemoveTorrent(size_t hash, bool remove_files) {
     std::lock_guard<std::mutex> lock(m_Mutex);
-    auto handle = m_Handles[name];
+    auto handle = m_Handles[hash];
     Logger::watcher w("Removing torrent" + handle.status().name);
-    m_Handles.erase(m_Handles.find(name));
+    m_Handles.erase(m_Handles.find(hash));
     if (remove_files) {
         _ses.remove_torrent(handle, lt::session_handle::delete_files);
     } else _ses.remove_torrent(handle);
@@ -139,7 +139,7 @@ void TorrentHandler::do_work() {
                     if (!handle.is_valid()) continue;
                     handle.save_resume_data(lt::torrent_handle::save_info_dict);
                     for (auto &cb : m_CompletedCallbacks) {
-                        cb(handle.status());
+                        cb(handle);
                     }
                 }
                 if (auto al = lt::alert_cast<lt::torrent_error_alert>(a)) {
@@ -148,7 +148,7 @@ void TorrentHandler::do_work() {
                 }
                 if (auto al = lt::alert_cast<lt::add_torrent_alert>(a)) {
                     if (!al->handle.is_valid()) continue;
-                    m_Handles.insert(std::make_pair(al->handle.status().name, al->handle));
+                    m_Handles.insert(std::make_pair(Unique::from_string(al->handle.status().name), al->handle));
                     for (auto &cb : m_AddedCallbacks) {
                         cb.second();
                     }
@@ -283,6 +283,6 @@ void TorrentHandler::setup_torrent(const std::string &url, const std::string &fi
     }
 }
 
-void TorrentHandler::subscribe_for_completed(const std::function<void(const lt::torrent_status &)> &callback) {
+void TorrentHandler::subscribe_for_completed(const std::function<void(const lt::torrent_handle &)> &callback) {
     m_CompletedCallbacks.push_back(callback);
 }

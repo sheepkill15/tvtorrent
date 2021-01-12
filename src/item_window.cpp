@@ -136,7 +136,7 @@ void TTItemWindow::notify() {
 void TTItemWindow::update_torrent_views() {
     auto group = DataContainer::get_group(hash);
 	for(const auto& row: m_refTreeModel->children()) {
-	    auto& handle = group.second->m_Handles[row->get_value(m_Columns.m_col_name)];
+	    auto& handle = group.second->m_Handles[Unique::from_string(row->get_value(m_Columns.m_col_name))];
 	    if(!handle.is_valid()) continue;
 		auto status = handle.status();
 		row[m_Columns.m_col_progress] = status.progress_ppm / 10000;
@@ -263,7 +263,7 @@ void TTItemWindow::on_start_torrent() {
 	auto row = selection->get_selected();
 	if(!row) return;
 	auto group = DataContainer::get_group(hash);
-	auto handle = group.second->m_Handles[row->get_value(m_Columns.m_col_name)];
+	auto handle = group.second->m_Handles[Unique::from_string(row->get_value(m_Columns.m_col_name))];
     handle.set_flags(lt::torrent_flags::auto_managed);
 	handle.resume();
 }
@@ -275,7 +275,7 @@ void TTItemWindow::on_pause_torrent() {
 	auto row = selection->get_selected();
 	if(!row) return;
     auto group = DataContainer::get_group(hash);
-    auto handle = group.second->m_Handles[row->get_value(m_Columns.m_col_name)];
+    auto handle = group.second->m_Handles[Unique::from_string(row->get_value(m_Columns.m_col_name))];
 	handle.unset_flags(lt::torrent_flags::auto_managed);
 	handle.pause();
 }
