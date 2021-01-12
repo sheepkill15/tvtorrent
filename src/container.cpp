@@ -23,6 +23,8 @@ void DataContainer::add_group(const Glib::ustring &name, const Glib::ustring &im
     auto item = new TVItem { .name =  name, .img_path = img_path, .default_save_path = default_path };
     auto hndl = new TorrentHandler();
     m_Groups.insert(std::make_pair(item, hndl));
+
+    hndl->subscribe_for_completed([](const lt::torrent_handle& stat) { DataContainer::get_manager().on_torrent_completed(stat); });
 }
 
 void DataContainer::remove_feed(size_t hash) {
@@ -52,9 +54,10 @@ void DataContainer::remove_filter(size_t id) {
 void DataContainer::remove_group(size_t hash) {
     for(auto& pair : m_Groups) {
         if(pair.first->hash == hash) {
-            m_Groups.erase(pair.first);
             delete pair.first;
             delete pair.second;
+            m_Groups.erase(pair.first);
+            break;
         }
     }
 }
@@ -113,6 +116,7 @@ void DataContainer::init() {
             m_Downloaded.push_back(i.asString());
         }
     }
+    m_Manager = new DataManager();
 }
 
 void DataContainer::cleanup() {
@@ -127,6 +131,8 @@ void DataContainer::cleanup() {
 
     SettingsManager::save();
 
+    delete m_Manager;
+
     for(auto& pair : m_Groups) {
         delete pair.first;
         delete pair.second;
@@ -138,8 +144,6 @@ void DataContainer::cleanup() {
     for(auto feed : m_Feeds) {
         delete feed;
     }
-
-
 }
 
 std::pair<TVItem*, TorrentHandler*> DataContainer::get_group(const Glib::ustring &name) {
@@ -176,7 +180,7 @@ void DataContainer::add_torrent(size_t hash, const std::string &url, const std::
 void DataContainer::remove_torrent(size_t hash, const std::string& name, int index, bool remove_files) {
     auto group = get_group(hash);
 
-    group.second->RemoveTorrent(name, remove_files);
+    group.second->RemoveTorrent(Unique::from_string(name), remove_files);
 
     if(remove_files) {
         ResourceManager::delete_file(name);
@@ -192,4 +196,16 @@ Feed* DataContainer::get_feed(size_t first) {
         }
     }
     return nullptr;
+}
+
+void DataContainer::remove_torrent(const std::string & torr_name, bool remove_files) {
+    size_t hash = Unique::from_string(torr_name);
+    for(auto& group : get_groups()) {
+        for(auto& pair : group.second->m_Handles) {
+            if(pair.first == hash) {
+                group.second->RemoveTorrent(hash, remove_files);
+                return;
+            }
+        }
+    }
 }
