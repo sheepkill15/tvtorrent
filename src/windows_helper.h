@@ -64,10 +64,12 @@ void delete_icon() {
     Shell_NotifyIcon(NIM_DELETE, &nid);
 }
 
+static bool terminated = false;
+
 WINBOOL terminate_handler(DWORD signal) {
+    if(terminated) return TRUE;
     //message_queue::remove("mq");
     Logger::info(std::string("Caught termination signal: ") + std::to_string(signal));
-    delete_icon();
     // DataContainer::cleanup();
 
     ResourceManager::create_torrent_save(DataContainer::get_groups());
@@ -82,8 +84,11 @@ WINBOOL terminate_handler(DWORD signal) {
     SettingsManager::save();
 
     Logger::cleanup();
+    delete_icon();
+    terminated = true;
     return TRUE;
 }
+
 
 void SetupNotificationIcon() {
     Logger::info("Trying to create notification icon");
@@ -196,6 +201,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 default:
                     break;
             }
+            break;
+        }
+        case WM_DESTROY:
+        case WM_QUIT:
+        case WM_CLOSE:
+        case WM_ENDSESSION:
+        case WM_QUERYENDSESSION: {
+            terminate_handler(1);
             break;
         }
         default:

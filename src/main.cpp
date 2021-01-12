@@ -185,8 +185,8 @@ int main(int argc, char *argv[]) {
     should_work = false;
     mine.detach();
     message_queue::remove("mq");
-    delete_icon();
     DataContainer::cleanup();
     Logger::cleanup();
+    delete_icon();
     return result;
 }
