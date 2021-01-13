@@ -135,7 +135,7 @@ void TTItemWindow::notify() {
 
 void TTItemWindow::update_torrent_views() {
     auto group = DataContainer::get_group(hash);
-	for(const auto& row: m_refTreeModel->children()) {
+	for(auto& row: m_refTreeModel->children()) {
 	    auto& handle = group.second->m_Handles[Unique::from_string(row->get_value(m_Columns.m_col_name))];
 	    if(!handle.is_valid()) continue;
 		auto status = handle.status();
