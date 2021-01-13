@@ -71,20 +71,11 @@ void DataContainer::init() {
         for(auto & i : root) {
             if(!i.isMember("default_path")) continue;
             add_group(i["name"].asString(), i["img_path"].asString(), i["default_path"].asString());
-            if(i.isMember("torrents") && i["torrents"]) {
+            if(i.isMember("torrents")) {
                 for(int j = 0; j < i["torrents"].size(); j++) {
                     std::string uri = i["torrents"][j]["magnet_uri"].asString();
                     size_t h = Unique::from_string(i["name"].asString());
-                    TVItem* it = nullptr;
-                    for(auto& pair : m_Groups) {
-                        if(pair.first->hash == h) {
-                            it = pair.first;
-                            break;
-                        }
-                    }
-                    if(it) {
-                        add_torrent(h, uri, i["torrents"][j]["file_path"].asString());
-                    }
+                    add_torrent(h, uri, i["torrents"][j]["file_path"].asString());
                 }
             }
         }

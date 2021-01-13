@@ -147,7 +147,7 @@ void TorrentHandler::do_work() {
                     al->handle.save_resume_data(lt::torrent_handle::save_info_dict);
                 }
                 if (auto al = lt::alert_cast<lt::add_torrent_alert>(a)) {
-                    if (!al->handle.is_valid()) continue;
+                    //if (!al->handle.is_valid()) continue;
                     m_Handles.insert(std::make_pair(Unique::from_string(al->handle.status().name), al->handle));
                     for (auto &cb : m_AddedCallbacks) {
                         cb.second();
@@ -202,7 +202,7 @@ void TorrentHandler::unsubscribe_from_added(int id) {
 
 void TorrentHandler::setup_torrent(const std::string &url, const std::string &file_path, size_t curr_count) {
     {
-        std::lock_guard<std::mutex> lock(m_Mutex);
+        // std::lock_guard<std::mutex> lock(m_Mutex);
 
         Logger::watcher w("Torrent setup: " + url);
 
@@ -224,11 +224,35 @@ void TorrentHandler::setup_torrent(const std::string &url, const std::string &fi
                 curl_easy_setopt(curl, CURLOPT_WRITEDATA,
                                  &buffer); /* Data Pointer &buffer stores downloaded web content */
                 curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+                curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
             } else {
                 return;
             }
             curl_easy_perform(curl);
             curl_easy_cleanup(curl);
+
+            while(buffer.find("429 Too Many Requests") != std::string::npos) {
+                buffer.clear();
+                std::this_thread::sleep_for(std::chrono::seconds(5));
+
+                curl = curl_easy_init();
+                if (curl) {
+                    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+                    curl_easy_setopt(curl, CURLOPT_HEADER, 0);
+                    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION,
+                                     0); /* Don't follow anything else than the particular url requested*/
+                    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+                                     &Feed::writer);    /* Function Pointer "writer" manages the required buffer size */
+                    curl_easy_setopt(curl, CURLOPT_WRITEDATA,
+                                     &buffer); /* Data Pointer &buffer stores downloaded web content */
+                    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+                    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+                } else {
+                    return;
+                }
+                curl_easy_perform(curl);
+                curl_easy_cleanup(curl);
+            }
 
             try {
                 lt::torrent_info info(buffer.c_str(), buffer.size());
