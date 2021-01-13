@@ -33,7 +33,7 @@ public:
     static void remove_feed(size_t hash);
     static void remove_filter(size_t id);
     static void remove_group(size_t hash);
-    static void remove_torrent(size_t hash, const std::string&, int index, bool remove_files = false);
+    static void remove_torrent(size_t hash, const lt::torrent_handle&, const std::string&, int index, bool remove_files = false);
     static void remove_torrent(const std::string&, bool remove_files = false);
 
     inline static const std::vector<Feed*>& get_feeds()  { return m_Feeds; };

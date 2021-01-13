@@ -168,10 +168,15 @@ void DataContainer::add_torrent(size_t hash, const std::string &url, const std::
     group.second->AddTorrent(url, path);
 }
 
-void DataContainer::remove_torrent(size_t hash, const std::string& name, int index, bool remove_files) {
+void DataContainer::remove_torrent(size_t hash, const lt::torrent_handle& hndl, const std::string& name, int index, bool remove_files) {
     auto group = get_group(hash);
 
-    group.second->RemoveTorrent(Unique::from_string(name), remove_files);
+    for(auto& pair : group.second->m_Handles) {
+        if(pair.second == hndl) {
+            group.second->RemoveTorrent(pair.first, remove_files);
+            break;
+        }
+    }
 
     if(remove_files) {
         ResourceManager::delete_file(name);

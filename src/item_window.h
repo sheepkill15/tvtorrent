@@ -18,7 +18,7 @@
 
 class ModelColumns : public Gtk::TreeModel::ColumnRecord {
 	public:
-		ModelColumns() { add(m_col_id); add(m_col_name); add(m_col_progress); add(m_col_state); add(m_col_dl); add(m_col_ul); add(m_col_size); add(m_col_eta); }
+		ModelColumns() { add(m_col_id); add(m_col_name); add(m_col_progress); add(m_col_state); add(m_col_dl); add(m_col_ul); add(m_col_size); add(m_col_eta); add(m_col_hndl);}
 
 		Gtk::TreeModelColumn<unsigned int> m_col_id;
 		Gtk::TreeModelColumn<Glib::ustring> m_col_name;
@@ -28,6 +28,7 @@ class ModelColumns : public Gtk::TreeModel::ColumnRecord {
 		Gtk::TreeModelColumn<Glib::ustring> m_col_ul;
 		Gtk::TreeModelColumn<Glib::ustring> m_col_size;
 		Gtk::TreeModelColumn<Glib::ustring> m_col_eta;
+		Gtk::TreeModelColumn<lt::torrent_handle> m_col_hndl;
 };
 
 class TTItemWindow : public Gtk::Window {

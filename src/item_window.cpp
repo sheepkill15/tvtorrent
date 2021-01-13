@@ -134,9 +134,8 @@ void TTItemWindow::notify() {
 }
 
 void TTItemWindow::update_torrent_views() {
-    auto group = DataContainer::get_group(hash);
 	for(auto& row: m_refTreeModel->children()) {
-	    auto& handle = group.second->m_Handles[Unique::from_string(row->get_value(m_Columns.m_col_name))];
+	    libtorrent::torrent_handle handle = row->get_value(m_Columns.m_col_hndl);
 	    if(!handle.is_valid()) continue;
 		auto status = handle.status();
 		row[m_Columns.m_col_progress] = status.progress_ppm / 10000;
@@ -187,6 +186,7 @@ void TTItemWindow::add_torrent_row() {
 	row[m_Columns.m_col_size] = Formatter::format_size(status.total_wanted);
 	if(status.download_payload_rate)
 		row[m_Columns.m_col_eta] = Formatter::format_time((status.total_wanted - status.total_wanted_done) / status.download_payload_rate);
+	row[m_Columns.m_col_hndl] = status.handle;
 }
 
 void TTItemWindow::remove_selected_rows(bool remove_files) {
@@ -197,7 +197,7 @@ void TTItemWindow::remove_selected_rows(bool remove_files) {
 	if(!row) return;
 	unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
 	auto name = row->get_value(m_Columns.m_col_name);
-    DataContainer::remove_torrent(hash, name, id, remove_files);
+    DataContainer::remove_torrent(hash, row->get_value(m_Columns.m_col_hndl), name, id, remove_files);
 	m_refTreeModel->erase(row);
 	auto children = m_refTreeModel->children();
 	for(int i = 1; i <= children.size(); i++) {
@@ -262,8 +262,7 @@ void TTItemWindow::on_start_torrent() {
 	if(!selection) return;
 	auto row = selection->get_selected();
 	if(!row) return;
-	auto group = DataContainer::get_group(hash);
-	auto handle = group.second->m_Handles[Unique::from_string(row->get_value(m_Columns.m_col_name))];
+	auto handle = row->get_value(m_Columns.m_col_hndl);
     handle.set_flags(lt::torrent_flags::auto_managed);
 	handle.resume();
 }
@@ -274,8 +273,7 @@ void TTItemWindow::on_pause_torrent() {
 	if(!selection) return;
 	auto row = selection->get_selected();
 	if(!row) return;
-    auto group = DataContainer::get_group(hash);
-    auto handle = group.second->m_Handles[Unique::from_string(row->get_value(m_Columns.m_col_name))];
+    auto handle = row->get_value(m_Columns.m_col_hndl);
 	handle.unset_flags(lt::torrent_flags::auto_managed);
 	handle.pause();
 }

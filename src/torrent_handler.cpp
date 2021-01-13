@@ -233,7 +233,7 @@ void TorrentHandler::setup_torrent(const std::string &url, const std::string &fi
 
             while(buffer.find("429 Too Many Requests") != std::string::npos) {
                 buffer.clear();
-                std::this_thread::sleep_for(std::chrono::seconds(5));
+                std::this_thread::sleep_for(std::chrono::seconds(1));
 
                 curl = curl_easy_init();
                 if (curl) {
