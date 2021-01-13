@@ -30,7 +30,7 @@ namespace {
     std::string last_message;
     void check_for_ipc_message() {
 
-        message_queue mq(open_or_create, "mq", 20, sizeof(char) * 500);
+        message_queue mq(open_or_create, "mq", 100, sizeof(char) * 1000);
 
         while (should_work) {
             try {
@@ -38,8 +38,8 @@ namespace {
                 unsigned int priority;
                 std::string buffer;
                 if (mq.get_num_msg() > 0) {
-                    buffer.resize(550);
-                    mq.receive(buffer.data(), sizeof(char) * 500, recvd_size, priority);
+                    buffer.resize(1010);
+                    mq.receive(buffer.data(), sizeof(char) * 1000, recvd_size, priority);
                     buffer.resize(recvd_size / sizeof(char));
                     Logger::info(std::string("Received: ") + std::to_string(recvd_size) + ": " + buffer);
                     if(recvd_size <= 10) {
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
         bool already_running = check_for_running_process();
         Logger::info("Checking for already running processes");
         if (already_running) {
-            message_queue messageQueue(open_or_create, "mq", 20, sizeof(char) * 500);
+            message_queue messageQueue(open_or_create, "mq", 100, sizeof(char) * 1000);
             if (argc == 2) {
                 std::string teszt(argv[1]);
                 Logger::info(std::string("Preparing to send ") + std::to_string(teszt.size()) + ": " + teszt);
