@@ -18,7 +18,7 @@ public:
     static void ForceFinish();
 
 private:
-    constexpr static const char tag[] = "v1.6-beta";
+    constexpr static const char tag[] = "v2.0f";
 
     static void CreateUpdateDialog();
 
