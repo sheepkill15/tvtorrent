@@ -33,33 +33,21 @@ TTSettingsWindow::TTSettingsWindow(TTMainWindow* caller)
     }
     tf_action_select->set_active(SettingsManager::get_settings().on_torrent_finish);
 
-    dl->ON_CHANGE(&TTSettingsWindow::on_dl_change);
-    ul->ON_CHANGE(&TTSettingsWindow::on_ul_change);
-    theme_select->ON_CHANGE(&TTSettingsWindow::on_theme_change);
-    tf_action_select->ON_CHANGE(&TTSettingsWindow::on_tf_action_change);
+    window->ON_HIDE(&TTSettingsWindow::self_destruct);
+
     window->show();
 }
 
 TTSettingsWindow::~TTSettingsWindow() {
+    SettingsManager::get_settings().on_torrent_finish = (SettingsManager::TorrentFinishAction) tf_action_select->get_active_row_number();
+    SettingsManager::get_settings().selected_theme = (SettingsManager::Theme) theme_select->get_active_row_number();
+    char *end;
+    SettingsManager::get_settings().ul_limit = strtof(ul->get_text().c_str(), &end);
+    SettingsManager::get_settings().dl_limit = strtof(dl->get_text().c_str(), &end);
+    parent->update_limits();
     delete window;
 }
 
-void TTSettingsWindow::on_dl_change() {
-    char* end;
-    SettingsManager::get_settings().dl_limit = strtof(dl->get_text().c_str(), &end);
-    parent->update_limits();
-}
-
-void TTSettingsWindow::on_ul_change() {
-    char* end;
-    SettingsManager::get_settings().ul_limit = strtof(ul->get_text().c_str(), &end);
-    parent->update_limits();
-}
-
-void TTSettingsWindow::on_theme_change() {
-    SettingsManager::get_settings().selected_theme = (SettingsManager::Theme)theme_select->get_active_row_number();
-}
-
-void TTSettingsWindow::on_tf_action_change() {
-    SettingsManager::get_settings().on_torrent_finish = (SettingsManager::TorrentFinishAction)tf_action_select->get_active_row_number();
+void TTSettingsWindow::self_destruct() {
+    delete this;
 }

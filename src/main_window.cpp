@@ -2,15 +2,12 @@
 #include "gtkmm/filechooser.h"
 #include "gtkmm/filechooserbutton.h"
 #include <gtkmm/toolbar.h>
-#include <gtkmm/comboboxtext.h>
 #include <memory>
-#include <utility>
 #include "macros.h"
 #include "resource_manager.h"
 #include "feed_control_window.h"
 #include "logger.h"
 #include "container.h"
-#include "settings_manager.h"
 
 TTMainWindow::TTMainWindow()
 	: tvw_list(),
@@ -155,12 +152,7 @@ void TTMainWindow::on_button_remove() {
 }
 
 void TTMainWindow::on_button_settings() {
-	if(settings_window != nullptr) {
-	    settings_window->window->show();
-	    return;
-	}
-	settings_window = new TTSettingsWindow(this);
-	settings_window->window->ON_HIDE(&TTMainWindow::on_settings_window_hide);
+	new TTSettingsWindow(this);
 }
 
 bool TTMainWindow::on_tvwidget_double_click(GdkEventButton* ev) {
@@ -176,7 +168,6 @@ bool TTMainWindow::on_tvwidget_double_click(GdkEventButton* ev) {
 		Logger::info("Creating item window");
 		auto window = new TTItemWindow(item->hash);
 		Logger::info("Created!");
-		window->ON_HIDE_BIND(&TTMainWindow::on_item_window_hide, TTItemWindow*), window));
 		window->show();
 		//get_application()->add_window(*window);
 	} 
@@ -184,29 +175,8 @@ bool TTMainWindow::on_tvwidget_double_click(GdkEventButton* ev) {
 	return true;
 }
 
-void TTMainWindow::on_item_window_hide(TTItemWindow* window) {
-	delete window;
-}
-
 void TTMainWindow::on_button_feeds() {
-    if(feed_control_window != nullptr) {
-        feed_control_window->window->show();
-        return;
-    }
-    feed_control_window = new TTFeedControlWindow();
-    feed_control_window->window->ON_HIDE(&TTMainWindow::on_feedcontrol_window_hide);
-    DataContainer::get_manager().pause();
-}
-
-void TTMainWindow::on_feedcontrol_window_hide() {
-    delete feed_control_window;
-    feed_control_window = nullptr;
-    DataContainer::get_manager().resume();
-    DataContainer::get_manager().refresh_check();
-}
-void TTMainWindow::on_settings_window_hide() {
-    delete settings_window;
-    settings_window = nullptr;
+    new TTFeedControlWindow();
 }
 
 void TTMainWindow::update_limits() {

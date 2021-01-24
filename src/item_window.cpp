@@ -127,6 +127,8 @@ TTItemWindow::TTItemWindow(size_t hash)
 	subscription = group.second->subscribe((const std::function<void()> &) [this] { TTItemWindow::notify(); });
 
 	Logger::info("Subscriptions and dispatchers initialized");
+
+	ON_HIDE(&TTItemWindow::self_destruct);
 }
 
 void TTItemWindow::notify() {
@@ -234,7 +236,7 @@ bool TTItemWindow::on_row_pressed(GdkEventButton *ev) {
 		if(!row) return false;
 		unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
 		auto group = DataContainer::get_group(hash);
-		auto path = group.first->torrents[id].file_path;
+		auto path = group.second->m_Handles[Unique::from_string(row->get_value(m_Columns.m_col_name))].status().save_path;
 #if defined(WIN32) || defined(WIN64)
 		auto pidl = ILCreateFromPath(ResourceManager::create_path(path, row->get_value(m_Columns.m_col_name)).c_str());
 		if(pidl) {
@@ -315,4 +317,8 @@ void TTItemWindow::on_torrentremovedialog_response(int response_id) {
 
 void TTItemWindow::notify_added() {
     m_Dispatcher_for_added.emit();
+}
+
+void TTItemWindow::self_destruct() {
+    delete this;
 }

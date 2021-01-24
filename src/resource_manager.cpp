@@ -63,9 +63,9 @@ void ResourceManager::create_torrent_save(const std::unordered_map<TVItem*, Torr
 		info["default_path"] = (std::string)item->default_save_path;
 		
 		Json::Value torrents;
-		for(int j = 0; j < item->torrents.size(); j++) {
-			torrents[j]["magnet_uri"] = (std::string)item->torrents[j].magnet_uri;
-			torrents[j]["file_path"] = (std::string)item->torrents[j].file_path;
+		int j = 0;
+		for(auto& pair : tvw.second->m_Handles) {
+		    torrents[j++] = pair.second.status().name;
 		}
 
 		info["torrents"] = torrents;

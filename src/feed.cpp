@@ -62,6 +62,9 @@ void Feed::parse_feed() {
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer); /* Data Pointer &buffer stores downloaded web content */
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+            curl_easy_setopt(curl, CURLOPT_USERAGENT, "TVTorrent");
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120);
+            curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30);
         } else {
             return;
         }
@@ -83,6 +86,9 @@ void Feed::parse_feed() {
                                  &buffer); /* Data Pointer &buffer stores downloaded web content */
                 curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
                 curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+                curl_easy_setopt(curl, CURLOPT_USERAGENT, "TVTorrent");
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120);
+                curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30);
             } else {
                 return;
             }

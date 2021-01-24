@@ -71,8 +71,12 @@ TTFeedControlWindow::TTFeedControlWindow()
     remove_filter->ON_CLICK(&TTFeedControlWindow::on_remove_filter);
     add_feed->ON_CLICK(&TTFeedControlWindow::on_add_feed);
     remove_feed->ON_CLICK(&TTFeedControlWindow::on_remove_feed);
+
+    window->ON_HIDE(&TTFeedControlWindow::self_destruct);
     window->show_all_children();
     window->show();
+
+    DataContainer::get_manager().pause();
 }
 
 TTFeedControlWindow::~TTFeedControlWindow() {
@@ -326,4 +330,10 @@ void TTFeedControlWindow::notify_feed_changed() {
         entry->set_label(feed->channel_data.title);
     }
     update_results();
+}
+
+void TTFeedControlWindow::self_destruct() {
+    DataContainer::get_manager().resume();
+    DataContainer::get_manager().refresh_check();
+    delete this;
 }

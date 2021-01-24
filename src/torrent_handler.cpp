@@ -52,31 +52,32 @@ TorrentHandler::TorrentHandler() {
                                              | lt::alert_category::status);
     _ses.apply_settings(p);
 
-    own_work = std::thread([this] { do_work(); });
+    own_work = new std::thread([this] { do_work(); });
 }
 
 TorrentHandler::~TorrentHandler() {
-    std::lock_guard<std::mutex> lock(m_Mutex);
-
+    //std::lock_guard<std::mutex> lock(m_Mutex);
+    for (auto &pair : m_Threads) {
+        pair.second.detach();
+        if(pair.second.joinable()) {
+            pair.second.join();
+        }
+    }
     signal_stop();
-    own_work.detach();
-//    if(own_work.joinable()) {
-//        own_work.join();
-//    }
+    own_work->detach();
+    delete own_work;
 
-//    for (auto &pair : m_Handles) {
-//        if(pair.second.is_valid())
-//            _ses.remove_torrent(pair.second);
-//    }
-//    for (auto &pair : m_Threads) {
-//        pair.second.detach();
-//    }
-//    m_Threads.clear();
-//    m_Handles.clear();
+    for (auto &pair : m_Handles) {
+        if(pair.second.is_valid())
+            _ses.remove_torrent(pair.second);
+    }
+
+    m_Threads.clear();
+    m_Handles.clear();
 }
 
 void TorrentHandler::AddTorrent(const std::string &url, const std::string &file_path) {
-    std::lock_guard<std::mutex> lock(m_Mutex);
+    //std::lock_guard<std::mutex> lock(m_Mutex);
     size_t curr_count = thread_count;
     m_Threads.insert(std::make_pair(curr_count, std::thread(
             [this, url, file_path, curr_count] { TorrentHandler::setup_torrent(url, file_path, curr_count); })));
@@ -84,7 +85,7 @@ void TorrentHandler::AddTorrent(const std::string &url, const std::string &file_
 }
 
 void TorrentHandler::RemoveTorrent(size_t hash, bool remove_files) {
-    std::lock_guard<std::mutex> lock(m_Mutex);
+    //std::lock_guard<std::mutex> lock(m_Mutex);
     auto handle = m_Handles[hash];
     Logger::watcher w("Removing torrent" + handle.status().name);
     m_Handles.erase(m_Handles.find(hash));
@@ -94,7 +95,7 @@ void TorrentHandler::RemoveTorrent(size_t hash, bool remove_files) {
 }
 
 void TorrentHandler::update_limits() {
-    std::lock_guard<std::mutex> lock(m_Mutex);
+    //std::lock_guard<std::mutex> lock(m_Mutex);
     for (auto &pair : m_Handles) {
         pair.second.set_download_limit(SettingsManager::get_settings().dl_limit * Formatter::MEGABYTE);
         pair.second.set_upload_limit(SettingsManager::get_settings().ul_limit * Formatter::MEGABYTE);
@@ -102,14 +103,14 @@ void TorrentHandler::update_limits() {
 }
 
 int TorrentHandler::subscribe(const std::function<void()> &callback) {
-    std::lock_guard<std::mutex> lock(m_Mutex);
+    //std::lock_guard<std::mutex> lock(m_Mutex);
     int id = sub_count++;
     m_Callbacks.insert(std::make_pair(id, callback));
     return id;
 }
 
 void TorrentHandler::unsubscribe(int id) {
-    std::lock_guard<std::mutex> lock(m_Mutex);
+    //std::lock_guard<std::mutex> lock(m_Mutex);
     m_Callbacks.erase(id);
 }
 
@@ -120,10 +121,9 @@ void TorrentHandler::do_work() {
 
     while (should_work) {
         {
-            std::lock_guard<std::mutex> lock(m_Mutex);
+            //std::lock_guard<std::mutex> lock(m_Mutex);
 
             //Logger::watcher w("Doing torrent check");
-
             std::vector<lt::alert *> alerts;
             _ses.pop_alerts(&alerts);
 
@@ -183,20 +183,19 @@ void TorrentHandler::do_work() {
 }
 
 void TorrentHandler::signal_stop() {
-    //std::lock_guard<std::mutex> lock(m_Mutex);
+    std::lock_guard<std::mutex> lock(m_Mutex);
     should_work = false;
-
 }
 
 int TorrentHandler::subscribe_for_added(const std::function<void()> &callback) {
-    std::lock_guard<std::mutex> lock(m_Mutex);
+    //std::lock_guard<std::mutex> lock(m_Mutex);
     int id = sub_count++;
     m_AddedCallbacks.insert(std::make_pair(id, callback));
     return id;
 }
 
 void TorrentHandler::unsubscribe_from_added(int id) {
-    std::lock_guard<std::mutex> lock(m_Mutex);
+    //std::lock_guard<std::mutex> lock(m_Mutex);
     m_AddedCallbacks.erase(id);
 }
 
@@ -225,6 +224,9 @@ void TorrentHandler::setup_torrent(const std::string &url, const std::string &fi
                                  &buffer); /* Data Pointer &buffer stores downloaded web content */
                 curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
                 curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+                curl_easy_setopt(curl, CURLOPT_USERAGENT, "TVTorrent");
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120);
+                curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30);
             } else {
                 return;
             }
@@ -247,6 +249,9 @@ void TorrentHandler::setup_torrent(const std::string &url, const std::string &fi
                                      &buffer); /* Data Pointer &buffer stores downloaded web content */
                     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
                     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+                    curl_easy_setopt(curl, CURLOPT_USERAGENT, "TVTorrent");
+                    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120);
+                    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30);
                 } else {
                     return;
                 }
@@ -300,7 +305,8 @@ void TorrentHandler::setup_torrent(const std::string &url, const std::string &fi
             DataContainer::add_downloaded(params.name);
         params.download_limit = SettingsManager::get_settings().dl_limit * Formatter::MEGABYTE;
         params.upload_limit = SettingsManager::get_settings().ul_limit * Formatter::MEGABYTE;
-        params.save_path = file_path;
+        if(!file_path.empty())
+            params.save_path = file_path;
         _ses.async_add_torrent(std::move(params));
         m_Threads[curr_count].detach();
         m_Threads.erase(curr_count);

@@ -57,6 +57,8 @@ private:
     std::unordered_map<size_t, size_t> m_Subscriptions;
 
     void UpdateFeeds(size_t);
+
+    void self_destruct();
 };
 
 

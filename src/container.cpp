@@ -2,6 +2,7 @@
 // Created by simon on 2021. jan. 10..
 //
 
+#include <libtorrent/torrent_info.hpp>
 #include "container.h"
 #include "resource_manager.h"
 #include "settings_manager.h"
@@ -73,9 +74,9 @@ void DataContainer::init() {
             add_group(i["name"].asString(), i["img_path"].asString(), i["default_path"].asString());
             if(i.isMember("torrents")) {
                 for(int j = 0; j < i["torrents"].size(); j++) {
-                    std::string uri = i["torrents"][j]["magnet_uri"].asString();
+                    std::string uri = ResourceManager::get_torrent_save_dir(true) + i["torrents"][j].asString();
                     size_t h = Unique::from_string(i["name"].asString());
-                    add_torrent(h, uri, i["torrents"][j]["file_path"].asString());
+                    add_torrent(h, uri);
                 }
             }
         }
@@ -204,4 +205,13 @@ void DataContainer::remove_torrent(const std::string & torr_name, bool remove_fi
             }
         }
     }
+}
+
+void DataContainer::add_torrent(size_t hash, const std::string &path) {
+    auto group = get_group(hash);
+    lt::torrent_info info(path);
+    if(!info.is_valid()) return;
+
+    group.first->torrents.push_back({path, ""});
+    group.second->AddTorrent(path, "");
 }

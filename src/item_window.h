@@ -78,6 +78,8 @@ private:
 	int subscription_for_added;
 
 	const size_t hash;
+
+	void self_destruct();
 };
 
 #endif

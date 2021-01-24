@@ -34,7 +34,7 @@ class TorrentHandler {
 
 		lt::session _ses;
 		bool should_work = true;
-		std::thread own_work;
+		std::thread* own_work;
 
 		std::unordered_map<int, std::function<void()>> m_Callbacks;
 		std::unordered_map<int, std::function<void()>> m_AddedCallbacks;

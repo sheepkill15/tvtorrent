@@ -39,9 +39,6 @@ protected:
 	void on_button_settings();
 	void on_button_feeds();
 	bool on_tvwidget_double_click(GdkEventButton* ev);
-	void on_item_window_hide(TTItemWindow* window);
-	void on_feedcontrol_window_hide();
-	void on_settings_window_hide();
 
 	void add_item(const Glib::ustring& name, const Glib::ustring& img_path, const Glib::ustring& default_path);
 	void init_items();
@@ -51,9 +48,6 @@ protected:
 	Gtk::VBox m_VBox;
 
     Glib::RefPtr<Gtk::Builder> m_refBuilder;
-
-    TTFeedControlWindow* feed_control_window = nullptr;
-    TTSettingsWindow* settings_window = nullptr;
 
     Glib::Dispatcher m_Dispatcher;
     std::string pending_uri;

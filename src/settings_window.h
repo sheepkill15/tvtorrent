@@ -24,11 +24,7 @@ private:
     Gtk::ComboBoxText* theme_select = nullptr;
     Gtk::ComboBoxText* tf_action_select = nullptr;
 
-    void on_dl_change();
-    void on_ul_change();
-
-    void on_theme_change();
-    void on_tf_action_change();
+    void self_destruct();
 };
 
 

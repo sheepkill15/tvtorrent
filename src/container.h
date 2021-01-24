@@ -26,6 +26,7 @@ public:
     static void add_downloaded(const std::string& name);
     static void add_group(const Glib::ustring& name, const Glib::ustring& img_path, const Glib::ustring& default_path);
     static void add_torrent(size_t hash, const std::string& url, const std::string& path);
+    static void add_torrent(size_t hash, const std::string& url);
 
     static std::pair<TVItem*, TorrentHandler*> get_group(const Glib::ustring& name);
     static std::pair<TVItem*, TorrentHandler*> get_group(size_t hash);
