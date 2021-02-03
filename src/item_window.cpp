@@ -234,9 +234,7 @@ bool TTItemWindow::on_row_pressed(GdkEventButton *ev) {
 		if(!selection) return false;
 		auto row = selection->get_selected();
 		if(!row) return false;
-		unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
-		auto group = DataContainer::get_group(hash);
-		auto path = group.second->m_Handles[Unique::from_string(row->get_value(m_Columns.m_col_name))].status().save_path;
+		auto path = row->get_value(m_Columns.m_col_hndl).status().save_path;
 #if defined(WIN32) || defined(WIN64)
 		auto pidl = ILCreateFromPath(ResourceManager::create_path(path, row->get_value(m_Columns.m_col_name)).c_str());
 		if(pidl) {
