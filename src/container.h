@@ -57,7 +57,7 @@ private:
 
     inline static DataManager* m_Manager{};
 
-    static std::set<size_t> m_AlreadyNotified;
+    inline static std::set<size_t> m_AlreadyNotified;
 };
 
 
