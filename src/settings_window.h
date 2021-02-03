@@ -25,6 +25,8 @@ private:
     Gtk::ComboBoxText* tf_action_select = nullptr;
 
     void self_destruct();
+
+    inline static size_t m_Running = 0;
 };
 
 

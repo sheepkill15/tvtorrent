@@ -12,6 +12,11 @@
 TTSettingsWindow::TTSettingsWindow(TTMainWindow* caller)
     :parent(caller)
 {
+    m_Running++;
+    if(m_Running > 1) {
+        delete this;
+        return;
+    }
     auto builder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_settings.glade"));
     builder->get_widget("SettingsWindow", window);
 
@@ -36,15 +41,20 @@ TTSettingsWindow::TTSettingsWindow(TTMainWindow* caller)
     window->ON_HIDE(&TTSettingsWindow::self_destruct);
 
     window->show();
+
+    m_Running = true;
 }
 
 TTSettingsWindow::~TTSettingsWindow() {
-    SettingsManager::get_settings().on_torrent_finish = (SettingsManager::TorrentFinishAction) tf_action_select->get_active_row_number();
-    SettingsManager::get_settings().selected_theme = (SettingsManager::Theme) theme_select->get_active_row_number();
-    char *end;
-    SettingsManager::get_settings().ul_limit = strtof(ul->get_text().c_str(), &end);
-    SettingsManager::get_settings().dl_limit = strtof(dl->get_text().c_str(), &end);
-    parent->update_limits();
+    m_Running--;
+    if(tf_action_select) {
+        SettingsManager::get_settings().on_torrent_finish = (SettingsManager::TorrentFinishAction) tf_action_select->get_active_row_number();
+        SettingsManager::get_settings().selected_theme = (SettingsManager::Theme) theme_select->get_active_row_number();
+        char *end;
+        SettingsManager::get_settings().ul_limit = strtof(ul->get_text().c_str(), &end);
+        SettingsManager::get_settings().dl_limit = strtof(dl->get_text().c_str(), &end);
+        parent->update_limits();
+    }
     delete window;
 }
 

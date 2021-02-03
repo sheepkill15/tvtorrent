@@ -8,12 +8,15 @@
 #include "macros.h"
 #include "logger.h"
 #include "container.h"
-#include "feed.h"
-#include "item_window.h"
 
 TTFeedControlWindow::TTFeedControlWindow()
     : m_Dispatcher()
 {
+    m_Running++;
+    if(m_Running > 1) {
+        delete this;
+        return;
+    }
     Logger::watcher w("Initializing Feed control window!");
     auto builder = Gtk::Builder::create_from_file(ResourceManager::get_resource_path("tvtorrent_feedcontrol.glade"));
     builder->get_widget("FeedControlWindow", window);
@@ -79,14 +82,17 @@ TTFeedControlWindow::TTFeedControlWindow()
     window->show();
 
     DataContainer::get_manager().pause();
+    m_Running = true;
 }
 
 TTFeedControlWindow::~TTFeedControlWindow() {
+    m_Running--;
+    if(filter_list != nullptr) {
+        for (int i = 0; i < filter_list->get_children().size(); i++) {
 
-    for(int i = 0; i < filter_list->get_children().size(); i++) {
-
-        Feed::Filter* filter = DataContainer::get_filters()[i];
-        filter->id = reinterpret_cast<Gtk::Entry*>(filter_list->get_row_at_index(i)->get_child())->get_text();
+            Feed::Filter *filter = DataContainer::get_filters()[i];
+            filter->id = reinterpret_cast<Gtk::Entry *>(filter_list->get_row_at_index(i)->get_child())->get_text();
+        }
     }
 
     for(auto& pair : m_Subscriptions) {

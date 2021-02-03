@@ -68,6 +68,9 @@ public:
 };
 
     ModelColumns m_Column;
+
+
+    inline static size_t m_Running = 0;
 };
 
 
