@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.1 -->
+<!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
   <object class="GtkMessageDialog" id="RemoveFeedDialog">
@@ -44,12 +44,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkComboBoxText" id="FeedList">
+          <object class="GtkComboBox" id="FeedList">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="margin-start">4</property>
             <property name="margin-end">4</property>
-            <property name="active">0</property>
           </object>
           <packing>
             <property name="expand">False</property>

@@ -59,6 +59,15 @@ private:
     void UpdateFeeds(size_t);
 
     void self_destruct();
+
+class ModelColumns : public Gtk::TreeModel::ColumnRecord {
+public:
+    ModelColumns() { add(m_col_name); add(m_col_feed); };
+    Gtk::TreeModelColumn<Glib::ustring> m_col_name;
+    Gtk::TreeModelColumn<size_t> m_col_feed;
+};
+
+    ModelColumns m_Column;
 };
 
 

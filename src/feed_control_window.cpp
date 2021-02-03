@@ -8,6 +8,8 @@
 #include "macros.h"
 #include "logger.h"
 #include "container.h"
+#include "feed.h"
+#include "item_window.h"
 
 TTFeedControlWindow::TTFeedControlWindow()
     : m_Dispatcher()
@@ -165,26 +167,30 @@ void TTFeedControlWindow::on_remove_feed() {
     Gtk::Dialog* dialog;
     builder->get_widget("RemoveFeedDialog", dialog);
 
-    Gtk::ComboBoxText* cbt;
+    Gtk::ComboBox* cbt;
     builder->get_widget("FeedList", cbt);
 
+    auto treeModel = Gtk::ListStore::create(m_Column);
+    cbt->set_model(treeModel);
+
+    cbt->set_entry_text_column(m_Column.m_col_name);
+
     for(auto& feed : DataContainer::get_feeds()) {
-        cbt->append(feed->channel_data.title + " (" + std::to_string(feed->channel_data.hash) + ')');
+        Gtk::TreeModel::Row row = *treeModel->append();
+        row[m_Column.m_col_name] = feed->channel_data.title;
+        row[m_Column.m_col_feed] = feed->channel_data.hash;
     }
+
+    cbt->set_active(0);
 
     int result = dialog->run();
 
     switch(result) {
         case Gtk::RESPONSE_OK: {
-            auto selected = cbt->get_active_text();
-            if(selected.empty()) return;
-            auto nyit = selected.rfind('(');
-            auto zar = selected.rfind(')');
-            auto subsel = selected.substr(nyit + 1, zar - nyit - 1);
-            size_t hash = std::stoul(subsel);
-            DataContainer::remove_feed(hash);
+            auto row = cbt->get_active();
+            DataContainer::remove_feed(row->get_value(m_Column.m_col_feed));
             UpdateFeeds(cbt->get_active_row_number());
-            m_Subscriptions.erase(hash);
+            m_Subscriptions.erase(row->get_value(m_Column.m_col_feed));
             break;
         }
         case Gtk::RESPONSE_CANCEL:
