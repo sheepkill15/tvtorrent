@@ -135,8 +135,11 @@ void DataManager::resume() {
 }
 
 void DataManager::on_torrent_completed(const lt::torrent_handle &handle) {
-    if(m_Notify_Callback)
-        m_Notify_Callback(handle.status().name);
+    auto name = handle.status().name;
+    if(m_Notify_Callback && DataContainer::get_notified().find(Unique::from_string(name)) == DataContainer::get_notified().end()) {
+        m_Notify_Callback(name);
+        DataContainer::get_notified().insert(Unique::from_string(name));
+    }
     switch(SettingsManager::get_settings().on_torrent_finish) {
         case SettingsManager::Stop:
             handle.unset_flags(lt::torrent_flags::auto_managed);

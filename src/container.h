@@ -41,6 +41,7 @@ public:
     inline static const std::vector<Feed::Filter*>& get_filters()  { return m_Filters; };
     inline static const std::vector<std::string>& get_downloaded()  { return m_Downloaded; };
     inline static const std::unordered_map<TVItem*, TorrentHandler*>& get_groups() { return m_Groups; }
+    inline static std::set<size_t>& get_notified() { return m_AlreadyNotified; };
 
     static Feed* get_feed(size_t first);
 
@@ -55,6 +56,8 @@ private:
     inline static size_t m_FilterId = 0;
 
     inline static DataManager* m_Manager{};
+
+    static std::set<size_t> m_AlreadyNotified;
 };
 
 

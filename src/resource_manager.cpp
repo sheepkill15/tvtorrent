@@ -2,6 +2,7 @@
 #include "logger.h"
 #include <cstdlib>
 #include <filesystem>
+#include "container.h"
 
 namespace {
     void create_if_doesnt_exist(const std::string& path) {
@@ -115,6 +116,14 @@ void ResourceManager::create_feed_save(const std::vector<Glib::ustring> &feeds, 
         _downloads[i++] = download;
     }
     value["downloads"] = _downloads;
+
+    Json::Value notified;
+    i = 0;
+    for(auto& item : DataContainer::get_notified()) {
+        notified[i++] = item;
+    }
+    value["notified"] = notified;
+
     Json::StreamWriterBuilder builder;
     builder["indentation"] = "\t";
     std::string document = Json::writeString(builder, value);

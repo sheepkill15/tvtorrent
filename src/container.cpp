@@ -107,6 +107,10 @@ void DataContainer::init() {
         for(const auto& i : feed_root["downloads"]) {
             m_Downloaded.push_back(i.asString());
         }
+
+        for(const auto& i : feed_root["notified"]) {
+            m_AlreadyNotified.insert(i.asLargestUInt());
+        }
     }
     m_Manager = new DataManager();
 }

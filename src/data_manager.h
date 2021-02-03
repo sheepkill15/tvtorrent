@@ -23,6 +23,7 @@ public:
     void resume();
     void on_torrent_completed(const lt::torrent_handle& handle);
 
+
 private:
 
     std::function<void(const std::string&)> m_Notify_Callback;
