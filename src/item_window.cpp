@@ -129,8 +129,6 @@ TTItemWindow::TTItemWindow(size_t hash)
 	Logger::info("Subscriptions and dispatchers initialized");
 
 	ON_HIDE(&TTItemWindow::self_destruct);
-
-	m_Running = true;
 }
 
 void TTItemWindow::notify() {
