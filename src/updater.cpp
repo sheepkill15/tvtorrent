@@ -6,6 +6,7 @@
 #include "feed.h"
 #include "logger.h"
 #include "resource_manager.h"
+#include "downloader.h"
 #include <gtkmm/dialog.h>
 
 #if defined(WIN32) || defined(WIN64)
@@ -15,26 +16,8 @@
 
 void Updater::CheckUpdates() {
     Logger::watcher w("Checking for updates");
-    auto curl = curl_easy_init();
     std::string buffer;
-    if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "https://api.github.com/repos/sheepkill15/tvtorrent/tags");
-        curl_easy_setopt(curl, CURLOPT_HEADER, 0);
-        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION,
-                         0); /* Don't follow anything else than the particular url requested*/
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-                         &Feed::writer);    /* Function Pointer "writer" manages the required buffer size */
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer); /* Data Pointer &buffer stores downloaded web content */
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, "TVTorrent");
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120);
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30);
-    } else {
-        return;
-    }
-    curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
+    Downloader::fetch_no_alloc("https://api.github.com/repos/sheepkill15/tvtorrent/tags", buffer);
     Json::Value root;
     Json::CharReaderBuilder builder;
     builder["collectComments"] = false;

@@ -3,8 +3,6 @@
 
 #include <mutex>
 #include <rapidxml/rapidxml.hpp>
-#include <curl/curl.h>
-#include <curl/easy.h>
 #include <string>
 #include <thread>
 #include <vector>
@@ -41,8 +39,6 @@ public:
     size_t subscribe(const std::function<void()>&);
     void unsubscribe(size_t subscription);
 
-    static size_t writer(char *data, size_t size, size_t nmemb, std::string *buffer);
-
     //void add_filter(const std::string&, const std::string&, const std::string&);
 
     inline const std::string& GetUrl() const { return RSS_URL; }
@@ -69,8 +65,6 @@ private:
     std::string buffer;
 
     rapidxml::xml_document<> doc;
-
-    void* curl{};
 
     mutable std::mutex m_Mutex;
     std::thread own;

@@ -10,6 +10,7 @@
 #include "formatter.h"
 #include "logger.h"
 #include "container.h"
+#include "downloader.h"
 #include <mutex>
 #include <thread>
 #include <chrono>
@@ -212,52 +213,7 @@ void TorrentHandler::setup_torrent(const std::string &url, const std::string &fi
         } else if (url.rfind("https://") == 0) {
             Logger::watcher watch("HTTPS link parse");
             std::string buffer;
-            auto curl = curl_easy_init();
-            if (curl) {
-                curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-                curl_easy_setopt(curl, CURLOPT_HEADER, 0);
-                curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION,
-                                 0); /* Don't follow anything else than the particular url requested*/
-                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-                                 &Feed::writer);    /* Function Pointer "writer" manages the required buffer size */
-                curl_easy_setopt(curl, CURLOPT_WRITEDATA,
-                                 &buffer); /* Data Pointer &buffer stores downloaded web content */
-                curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-                curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-                curl_easy_setopt(curl, CURLOPT_USERAGENT, "TVTorrent");
-                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120);
-                curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30);
-            } else {
-                return;
-            }
-            curl_easy_perform(curl);
-            curl_easy_cleanup(curl);
-
-            while(buffer.find("429 Too Many Requests") != std::string::npos) {
-                buffer.clear();
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-
-                curl = curl_easy_init();
-                if (curl) {
-                    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-                    curl_easy_setopt(curl, CURLOPT_HEADER, 0);
-                    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION,
-                                     0); /* Don't follow anything else than the particular url requested*/
-                    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-                                     &Feed::writer);    /* Function Pointer "writer" manages the required buffer size */
-                    curl_easy_setopt(curl, CURLOPT_WRITEDATA,
-                                     &buffer); /* Data Pointer &buffer stores downloaded web content */
-                    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-                    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-                    curl_easy_setopt(curl, CURLOPT_USERAGENT, "TVTorrent");
-                    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120);
-                    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30);
-                } else {
-                    return;
-                }
-                curl_easy_perform(curl);
-                curl_easy_cleanup(curl);
-            }
+            Downloader::fetch_no_alloc(url, buffer);
 
             try {
                 lt::torrent_info info(buffer.c_str(), buffer.size());
