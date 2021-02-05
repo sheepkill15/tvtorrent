@@ -8,6 +8,7 @@
 #include "macros.h"
 #include "logger.h"
 #include "container.h"
+#include "feed.h"
 
 TTFeedControlWindow::TTFeedControlWindow()
     : m_Dispatcher()
@@ -177,9 +178,10 @@ void TTFeedControlWindow::on_remove_feed() {
     builder->get_widget("FeedList", cbt);
 
     auto treeModel = Gtk::ListStore::create(m_Column);
+
     cbt->set_model(treeModel);
 
-    cbt->set_entry_text_column(m_Column.m_col_name);
+    cbt->pack_start(m_Column.m_col_name);
 
     for(auto& feed : DataContainer::get_feeds()) {
         Gtk::TreeModel::Row row = *treeModel->append();
