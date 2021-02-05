@@ -29,7 +29,6 @@ public:
         return m_Hasher(myString);
     }
 private:
-    /// Caching
     inline static std::hash<std::string> m_Hasher;
     //inline static std::unordered_map<std::string, size_t> m_Cache;
 };

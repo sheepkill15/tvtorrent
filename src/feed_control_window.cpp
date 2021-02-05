@@ -8,8 +8,6 @@
 #include "macros.h"
 #include "logger.h"
 #include "container.h"
-#include "feed.h"
-
 TTFeedControlWindow::TTFeedControlWindow()
     : m_Dispatcher()
 {

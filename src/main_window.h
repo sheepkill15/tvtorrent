@@ -15,7 +15,6 @@
 #include "settings_window.h"
 #include <gtkmm/window.h>
 #include <gtkmm/scrolledwindow.h>
-#include <regex>
 
 class TTFeedControlWindow;
 
