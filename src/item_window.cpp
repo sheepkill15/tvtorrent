@@ -196,9 +196,8 @@ void TTItemWindow::remove_selected_rows(bool remove_files) {
 	if(!selection) return;
 	auto row = selection->get_selected();
 	if(!row) return;
-	unsigned int id = row->get_value(m_Columns.m_col_id) - 1;
-	auto name = row->get_value(m_Columns.m_col_name);
-    DataContainer::remove_torrent(hash, row->get_value(m_Columns.m_col_hndl), name, id, remove_files);
+    auto name = row->get_value(m_Columns.m_col_name);
+    DataContainer::remove_torrent(hash, row->get_value(m_Columns.m_col_hndl), name, remove_files);
 	m_refTreeModel->erase(row);
 	auto children = m_refTreeModel->children();
 	for(int i = 1; i <= children.size(); i++) {
