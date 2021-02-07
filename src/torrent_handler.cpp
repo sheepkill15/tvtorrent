@@ -11,11 +11,7 @@
 #include "logger.h"
 #include "container.h"
 #include "downloader.h"
-#include <mutex>
-#include <thread>
-#include <chrono>
 #include <filesystem>
-#include <iostream>
 
 namespace {
 

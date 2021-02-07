@@ -4,7 +4,6 @@
 #include "tv_widget.h"
 #include "item_window.h"
 #include <filesystem>
-#include <set>
 #include <gtkmm/cellrendererprogress.h>
 #include <gtkmm/filechooserbutton.h>
 #include <gtkmm/checkbutton.h>
@@ -16,7 +15,7 @@
 #include "container.h"
 
 #if defined(WIN32) || defined(WIN64)
-#include <shellapi.h>
+
 #include <shlobj.h>
 
 #endif

@@ -49,7 +49,7 @@ TTFeedControlWindow::TTFeedControlWindow()
     builder->get_widget("FeedList", feed_list);
 
     for(auto feed : DataContainer::get_feeds()) {
-        auto feed_list_item = Gtk::make_managed<Gtk::CheckButton>(feed->channel_data.title);;
+        auto feed_list_item = Gtk::make_managed<Gtk::CheckButton>(feed->channel_data.title);
         feed_list_item->set_data("feed", reinterpret_cast<void *>(feed));
         feed_list_item->ON_CLICK_BIND(&TTFeedControlWindow::on_feed_list_item_click, Gtk::CheckButton*), feed_list_item));
         m_Feeds.push_back(feed_list_item);

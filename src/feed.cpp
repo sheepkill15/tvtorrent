@@ -1,6 +1,5 @@
 #include "feed.h"
 #include "resource_manager.h"
-#include <utility>
 #include "logger.h"
 #include "downloader.h"
 

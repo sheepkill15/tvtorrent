@@ -2,7 +2,6 @@
 #include "gtkmm/filechooser.h"
 #include "gtkmm/filechooserbutton.h"
 #include <gtkmm/toolbar.h>
-#include <memory>
 #include "macros.h"
 #include "resource_manager.h"
 #include "feed_control_window.h"

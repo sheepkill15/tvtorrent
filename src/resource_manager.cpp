@@ -1,6 +1,5 @@
 #include "resource_manager.h"
 #include "logger.h"
-#include <cstdlib>
 #include <filesystem>
 #include "container.h"
 

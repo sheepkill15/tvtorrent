@@ -7,7 +7,6 @@
 #include "settings_manager.h"
 #include "macros.h"
 #include "main_window.h"
-#include <cstdlib>
 
 TTSettingsWindow::TTSettingsWindow(TTMainWindow* caller)
     :parent(caller)
