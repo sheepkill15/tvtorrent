@@ -38,9 +38,7 @@ void Feed::periodic() {
 
 void Feed::parse_feed() {
     {
-        buffer.clear();
         Downloader::fetch_no_alloc(RSS_URL, buffer);
-        doc.clear();
         try {
             doc.parse<0>(buffer.data());
         } catch (rapidxml::parse_error &er) {
@@ -61,9 +59,11 @@ void Feed::parse_feed() {
 
         channel_data.desc = desc->value();
         m_Items.clear();
+        buffer.clear();
         for (auto child = channel->first_node("item"); child != nullptr; child = child->next_sibling("item")) {
             parse_item(child);
         }
+        doc.clear();
     }
 
     for(auto& sb : m_Subscriptions) {
