@@ -164,16 +164,15 @@ std::pair<TVItem *, TorrentHandler *> DataContainer::get_group(size_t hash) {
 void DataContainer::add_torrent(size_t hash, const std::string &url, const std::string &path) {
     auto group = get_group(hash);
     size_t torrId = Unique::from_string(url);
-    for(const auto& torrent : group.first->torrents) {
-        if(torrent.hash == torrId)
+    for(const auto& pair : group.second->m_Handles) {
+        if(pair.first == torrId)
             return;
     }
 
-    group.first->torrents.push_back({url, path});
     group.second->AddTorrent(url, path);
 }
 
-void DataContainer::remove_torrent(size_t hash, const lt::torrent_handle& hndl, const std::string& name, int index, bool remove_files) {
+void DataContainer::remove_torrent(size_t hash, const lt::torrent_handle &hndl, const std::string &name, bool remove_files) {
     auto group = get_group(hash);
 
     for(auto& pair : group.second->m_Handles) {
@@ -186,8 +185,6 @@ void DataContainer::remove_torrent(size_t hash, const lt::torrent_handle& hndl, 
     if(remove_files) {
         ResourceManager::delete_file(name);
     }
-
-    group.first->torrents.erase(group.first->torrents.begin() + index);
 }
 
 Feed* DataContainer::get_feed(size_t first) {
@@ -215,7 +212,5 @@ void DataContainer::add_torrent(size_t hash, const std::string &path) {
     auto group = get_group(hash);
     lt::torrent_info info(path);
     if(!info.is_valid()) return;
-
-    group.first->torrents.push_back({path, ""});
     group.second->AddTorrent(path, "");
 }

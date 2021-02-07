@@ -84,7 +84,6 @@ void TTMainWindow::external_torrent(char argv[]) {
 		case Gtk::RESPONSE_YES:
 		{
 			auto pair = DataContainer::get_group(item_list->get_active_text());
-			pair.first->torrents.push_back({argv, file_path->get_filename()});
 			pair.second->AddTorrent(argv, file_path->get_filename());
 			break;
 		}

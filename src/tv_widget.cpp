@@ -40,7 +40,7 @@ void TVWidget::init(const Glib::ustring &itemName, const Glib::ustring &imgPath)
 
 void TVWidget::update() {
     auto group = DataContainer::get_group(hash);
-	m_Downloads->set_label(Glib::ustring::format(group.first->torrents.size(), " downloads"));
+	m_Downloads->set_label(Glib::ustring::format(group.second->m_Handles.size(), " downloads"));
 	
 	lt::torrent_status maxi;
 	for(auto& pair : group.second->m_Handles) {
