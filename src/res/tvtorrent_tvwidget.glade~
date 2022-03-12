@@ -12,6 +12,10 @@
       <object class="GtkImage" id="TVW_Image">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
+        <property name="halign">center</property>
+        <property name="valign">center</property>
+        <property name="pixel-size">200</property>
+        <property name="icon-name">user-desktop</property>
       </object>
       <packing>
         <property name="expand">False</property>
@@ -23,6 +27,8 @@
       <object class="GtkLabel" id="TVW_Name">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
+        <property name="halign">center</property>
+        <property name="valign">center</property>
         <property name="ypad">8</property>
         <property name="label" translatable="yes">Name</property>
       </object>
@@ -36,6 +42,8 @@
       <object class="GtkLabel" id="TVW_Downloads">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
+        <property name="halign">center</property>
+        <property name="valign">center</property>
         <property name="ypad">8</property>
         <property name="label" translatable="yes">X downloads</property>
       </object>
@@ -74,6 +82,7 @@
             <property name="can-focus">False</property>
             <property name="xpad">4</property>
             <property name="label" translatable="yes">File name</property>
+            <property name="wrap">True</property>
             <property name="max-width-chars">40</property>
             <property name="xalign">0</property>
           </object>
@@ -89,7 +98,6 @@
             <property name="can-focus">False</property>
             <property name="margin-start">4</property>
             <property name="margin-end">4</property>
-            <property name="spacing">3</property>
             <child>
               <object class="GtkProgressBar" id="Progress">
                 <property name="visible">True</property>
@@ -98,8 +106,8 @@
                 <property name="show-text">True</property>
               </object>
               <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
                 <property name="position">0</property>
               </packing>
             </child>
@@ -120,6 +128,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="label" translatable="yes">DL speed</property>
+                <property name="width-chars">10</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -144,6 +153,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="label" translatable="yes">UL speed</property>
+                <property name="width-chars">10</property>
               </object>
               <packing>
                 <property name="expand">False</property>
